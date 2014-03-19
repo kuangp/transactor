@@ -1,0 +1,47 @@
+module transactor.examples.bank_transfer;
+
+import transactor.language.*;
+import java.util.*;
+
+behavior bankaccount extends Transactor {
+
+    private int bal;
+    
+    public bankaccount(int balance){
+        super(self);
+        bal = balance;
+        stabilize();
+        checkpoint();
+    }
+
+    public void adj(int delta, Transactor atm){
+        bal = bal + delta;
+        setTState();
+        Object[] response = new Object[1];
+        if (bal < 0){
+            response[0] = "Not enough funds!";
+            sendMsg("done", response, atm);
+            rollback(false);
+        }
+        else {
+            stabilize();
+            response[0] = "Balance update successful!";
+            sendMsg("done", response, atm);
+        }
+        System.out.println(getString());
+    }
+
+    public void pingreq(Transactor requester){
+        sendMsg("ping", new Object[0], requester);
+    }
+
+    public void ping(){
+        checkpoint();
+    }
+
+    public void printData(){
+        System.out.println("Balance: " + bal);
+        System.out.println(getString());
+    }
+}
+        

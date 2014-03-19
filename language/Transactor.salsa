@@ -1,0 +1,245 @@
+module transactor.language;
+
+import java.io.*;
+import java.util.*;
+
+// NOTE: The order of execution of worldview modification is important in some methods
+behavior Transactor {
+    private Worldview wv;
+    private String name;
+
+    /* 
+     * Super constructor must be called from subclasses of transactors
+     * Transactor complier would need to insert super(name) into the construct method 
+     * self is needed since subclasses do not override its parents memeber variables 
+     * so we need access to self in these methods
+     */
+    public Transactor(Transactor self) {
+        this.self = self;
+        if (self.getUAN() != null) this.name = self.getUAN().toString();
+        else this.name = self.getUAL().toString();
+        wv = new Worldview();
+        HashMap new_histMap = new HashMap();
+        new_histMap.put(name, new History());
+        wv.setHistMap(new_histMap);
+    }
+
+    /* 
+     * For instantiating the Transactor class without subclassing
+     * This construct may not be needed
+     */
+    public Transactor() {
+        if (self.getUAN() != null) this.name = self.getUAN().toString();
+        else this.name = self.getUAL().toString();
+        wv = new Worldview();
+        HashMap new_histMap = new HashMap();
+        new_histMap.put(name, new History());
+        wv.setHistMap(new_histMap);
+    }
+
+    public void setWV(Worldview wv) {
+        this.wv = wv;
+    }
+
+    /* 
+     * Recv resolves wv and then calls its own msg method 
+     */
+    public void recvMsg(Message msg, Worldview msg_wv) {
+        Worldview union = wv.union(msg_wv);
+        HashSet current = new HashSet();
+        current.add(name);
+        if (union.invalidates(wv.getHistMap(), current)) {
+            if (wv.getHistMap().get(name).isPersistent()) {
+                // ROLLBACK first
+                rollback(true);
+                Worldview new_wv = new Worldview();
+                HashMap new_histMap = new HashMap();
+                new_histMap.put(name, union.getHistMap().get(name));
+                new_wv.setHistMap(new_histMap);
+                // need to call setWV to send call to rolled back state 
+                // we cannot access this wv directly because this thread will be destroyed upon return to be replaced by saved state
+                setWV(new_wv);
+                // Message remains, still need to check if msg dependencies are invalidated
+                // therefore, we cannot just process msg
+                recvMsg(msg, msg_wv); 
+            }
+            else {
+                this.destroy();
+                System.out.println("annihilated");
+            }
+        }
+        else if (union.invalidates(msg_wv.getHistMap(), msg_wv.getRootSet())) {
+            wv = union;
+            wv.setRootSet(new HashSet());
+        }
+        else {
+            wv = union;
+            // we do not use process() to prevent recursive calls
+            // we may be able to just use mailbox though since this should be a local call?? 
+            // but there is concern over resolving tokens if placed into mailbox instead of pending?
+            // best choice is send() or __message? 
+            // difference between __messages and send is that _message calls send but with a delay, 
+            // therefore we can just used send()
+            // this or self? 
+            // "this" gives us the Transactor$State but we want to send to the transactor
+            self.send(msg);
+        }
+    }
+    
+    /*
+     * sendMsg calls recvMsg of recipient with msg and wv arguements
+     * Maybe extended with tokens if we use named token and return 
+     * SALSA 1.1.2 - named tokens cannot be returned
+     * Continuation might be able to handled internally in Message object 
+     */
+    public void sendMsg(String method, Object[] params, Transactor recipient) {
+        recipient<-recvMsg(new Message(self, recipient, method, params, null, null), this.wv);
+    }
+  
+    /* 
+     * newTActor -> returns new Transactor with dependencies set of parent and child 
+     * adds new t to histMap for both
+     * adds t to root set of parent
+     * sets depGraph to t dependent on parents root set plus parent
+     */
+    public Transactor newTActor(Transactor new_T) {
+        String new_name;
+        if (new_T.getUAN() != null) new_name = new_T.getUAN().toString();
+        else new_name = new_T.getUAL().toString();
+        wv.getHistMap().put(new_name, new History());
+        wv.getDepGraph().put(new_name, new HashSet());
+        wv.getDepGraph().get(new_name).add(name);
+        Iterator i = wv.getRootSet().iterator();
+        while (i.hasNext()) {
+            wv.getDepGraph().get(new_name).add((String)i.next());
+        }
+        wv.getRootSet().add(new_name);
+        Worldview new_wv = new Worldview(wv.getHistMap(), wv.getDepGraph(), new HashSet());
+        new_T<-setWV(new_wv);
+        return new_T;
+    }
+    
+    public void stabilize() {
+        wv.getHistMap().get(name).stabilize();
+        // TODO: Save stable state
+    }
+    
+    public boolean dependent() {
+        return !wv.independent(name);
+    }
+   
+    // TODO: extend with USL and ftp protocol with better filenaming scheme
+    public void checkpoint() {
+        if (!dependent() && wv.getHistMap().get(name).isStable()) {
+            wv.getHistMap().get(name).checkpoint();
+            HashMap new_histMap = new HashMap();
+            new_histMap.put(name, wv.getHistMap().get(name));
+            wv = new Worldview();
+            wv.setHistMap(new_histMap);
+            //System.out.println("Checkpointing.....");
+            try {
+                FileOutputStream fileOut = new FileOutputStream("./" + name.charAt(name.length()-1) + ".ser");
+                ObjectOutputStream out = new ObjectOutputStream(fileOut);
+                out.writeObject(this);
+                out.close();
+                fileOut.close();
+            }
+            catch(IOException e) {
+                e.printStackTrace();
+            }
+        }
+        else {
+            wv.setRootSet(new HashSet());
+        }
+    }
+   
+    public Transactor self() {
+        return self;
+    }
+    
+    /* 
+     * False: Programatic rollback
+     * True: Dependency rollback
+     * TODO: extend with USL and filename scheme
+     */
+    public void rollback(boolean force) {
+        if (!wv.getHistMap().get(name).isStable() || force) {
+            if (wv.getHistMap().get(name).isPersistent()) {
+                Transactor.State saved;
+                //System.out.println("Rolling back.....");
+                wv.getHistMap().get(name).rollback();
+                HashMap new_histMap = new HashMap();
+                new_histMap.put(name, wv.getHistMap().get(name));
+                Worldview new_wv = new Worldview();
+                new_wv.setHistMap(new_histMap);
+                try {
+                    FileInputStream fileIn = new FileInputStream("./" + name.charAt(name.length()-1) + ".ser");
+                    ObjectInputStream in = new ObjectInputStream(fileIn);
+                    saved = (Transactor.State) in.readObject();
+                    // We don't want serialized mailbox since the trace of msgs may cause a rollback loop
+                    // Instead we pick up current mailbox to continue evaluation of msges
+                    saved.mailbox = (Vector) this.mailbox.clone();
+                    saved.setWV(new_wv);
+                    in.close();
+                    fileIn.close();
+                    // Set references to retrieved state
+                    ServiceFactory.getNaming().setEntry(saved.getUAN(), saved.getUAL(), saved);
+                    if (getUAN() != null) ServiceFactory.getNaming().update(saved.getUAN(), saved.getUAL());
+                    // Starting new thread to deprecate this thread
+                    // BUG: prevents program from recognizing end of execution, may be internal GC reference problem
+                    saved.start();
+                    this.destroy();
+                }
+                catch(IOException i) {
+                    i.printStackTrace();
+                    return;
+                }
+                catch(ClassNotFoundException c) {
+                    c.printStackTrace();
+                    return;
+                }
+            }
+            else {
+                this.destroy();
+            }
+        }
+        else {
+            wv.setRootSet(new HashSet());
+        }
+    }
+
+    public String getString() {
+        return name + " -> " + wv.getHistMap().get(name).toString() + "\n" + wv.toString();
+    }
+
+    
+    /* 
+     * how to handle static member variables? serialize them?
+     * if one transactor sets it how do others see dependency? 
+     * one can checkpoint/set state because of static content set by other 
+     * and other rollback but wont be recognized cause no dep
+     * if self is seperately contained, can we access direct members in subclass state?
+     * compiler syntax for setting state?
+     */
+    public boolean setTState() {
+        if (!wv.getHistMap().get(name).isStable()){
+            if (!wv.getDepGraph().containsKey(name))
+                wv.getDepGraph().put(name, new HashSet());
+            Iterator i = wv.getRootSet().iterator();
+            while (i.hasNext()) {
+                wv.getDepGraph().get(name).add((String)i.next());
+            }
+            return true;
+        }
+        return false;
+    }
+
+    /*
+     * cannot orride getState() of Thread Class
+     * need to handle member variables retrieval 
+     */
+    public Object getTState(){
+        wv.getRootSet().add(name);
+        return null; 
+    }
+}

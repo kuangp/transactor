@@ -1,0 +1,52 @@
+module transactor.examples.bank_transfer;
+
+import transactor.language.*;
+import java.util.*;
+
+behavior teller extends Transactor {
+
+    private bankaccount inacct;
+    private bankaccount outacct;
+    private int acks;
+
+    public teller(bankaccount in, bankaccount out, int num_acks){
+        super(self);
+        acks = num_acks;
+        inacct = in;
+        outacct = out;
+        stabilize();
+        checkpoint();
+    }
+
+    public void transfer(int delta){
+        Object[] in_params = {delta, self};
+        Object[] out_params = {-1*delta, self};
+        sendMsg("adj", in_params, inacct);
+        sendMsg("adj", out_params, outacct);
+    }
+
+    public void done(String msg){
+        standardOutput<-println(msg);
+        acks = acks + 1;
+        setTState();
+        if (acks == 2){
+            stabilize();
+            Object[] p1 = {inacct};
+            Object[] p2 = {outacct};
+            Object[] p3 = {self};
+            sendMsg("pingreq", p1, outacct);
+            sendMsg("pingreq", p2, inacct);
+            sendMsg("pingreq", p3, outacct);
+            sendMsg("pingreq", p3, inacct);
+        }
+    }
+
+    public void ping() {
+        checkpoint();
+    }
+
+    public void printData(){
+        System.out.println("Acks: " + acks);
+        System.out.println(getString());
+    }   
+}
