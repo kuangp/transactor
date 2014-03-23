@@ -10,38 +10,39 @@ behavior bankaccount extends Transactor {
     public bankaccount(int balance){
         super(self);
         bal = balance;
-        stabilize();
-        checkpoint();
+        this.stabilize();
+        this.checkpoint();
     }
 
     public void adj(int delta, Transactor atm){
         bal = bal + delta;
-        setTState();
+        this.setTState();
         Object[] response = new Object[1];
         if (bal < 0){
             response[0] = "Not enough funds!";
-            sendMsg("done", response, atm);
-            rollback(false);
+            this.getTState();
+            this.sendMsg("done", response, atm);
+            this.rollback(false);
         }
         else {
-            stabilize();
+            this.stabilize();
             response[0] = "Balance update successful!";
-            sendMsg("done", response, atm);
+            this.getTState();
+            this.sendMsg("done", response, atm);
         }
-        System.out.println(getString());
     }
 
     public void pingreq(Transactor requester){
-        sendMsg("ping", new Object[0], requester);
+        this.sendMsg("ping", new Object[0], requester);
     }
 
     public void ping(){
-        checkpoint();
+        this.checkpoint();
     }
 
     public void printData(){
         System.out.println("Balance: " + bal);
-        System.out.println(getString());
+        System.out.println(this.getString());
     }
 }
         

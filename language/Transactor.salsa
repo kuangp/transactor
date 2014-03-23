@@ -51,21 +51,23 @@ behavior Transactor {
         if (union.invalidates(wv.getHistMap(), current)) {
             if (wv.getHistMap().get(name).isPersistent()) {
                 // ROLLBACK first
-                rollback(true);
+                // calling method of "this" will not compile into a message send, 
+                // resulting in a sequential method call
+                this.rollback(true);
                 Worldview new_wv = new Worldview();
                 HashMap new_histMap = new HashMap();
                 new_histMap.put(name, union.getHistMap().get(name));
                 new_wv.setHistMap(new_histMap);
                 // need to call setWV to send call to rolled back state 
                 // we cannot access this wv directly because this thread will be destroyed upon return to be replaced by saved state
-                setWV(new_wv);
+                // TODO: Sequential
+                self<-setWV(new_wv):priority @
                 // Message remains, still need to check if msg dependencies are invalidated
                 // therefore, we cannot just process msg
                 recvMsg(msg, msg_wv); 
             }
             else {
                 this.destroy();
-                System.out.println("annihilated");
             }
         }
         else if (union.invalidates(msg_wv.getHistMap(), msg_wv.getRootSet())) {
@@ -93,6 +95,8 @@ behavior Transactor {
      * Continuation might be able to handled internally in Message object 
      */
     public void sendMsg(String method, Object[] params, Transactor recipient) {
+        //Worldview msg_wv = new Worldview(this.wv.getHistMap(), this.wv.getDepGraph(), this.wv.getRootSet());
+        //msg_wv.getRootSet().add(name);
         recipient<-recvMsg(new Message(self, recipient, method, params, null, null), this.wv);
     }
   
@@ -115,13 +119,19 @@ behavior Transactor {
         }
         wv.getRootSet().add(new_name);
         Worldview new_wv = new Worldview(wv.getHistMap(), wv.getDepGraph(), new HashSet());
-        new_T<-setWV(new_wv);
+        new_T<-setWV(new_wv):priority;
         return new_T;
     }
     
     public void stabilize() {
         wv.getHistMap().get(name).stabilize();
         // TODO: Save stable state
+        // stable and checkpointed saved states would need to be seperate
+        // when reloading we reload last saved state (stable or checkpoint) if suddent failure
+        // we reload last checkpoint only on normal run time rollback
+        // need to determine most recent saved state (stable/checkpoint) to load upon recovery from failure
+        // how to recover from failure?
+        // on system start, each transactor check for saved state?
     }
     
     public boolean dependent() {
@@ -154,6 +164,7 @@ behavior Transactor {
     }
    
     public Transactor self() {
+        this.getTState();
         return self;
     }
     
@@ -223,8 +234,10 @@ behavior Transactor {
      */
     public boolean setTState() {
         if (!wv.getHistMap().get(name).isStable()){
-            if (!wv.getDepGraph().containsKey(name))
+            //System.out.println("setting state");
+            if (!wv.getDepGraph().containsKey(name)) {
                 wv.getDepGraph().put(name, new HashSet());
+            }
             Iterator i = wv.getRootSet().iterator();
             while (i.hasNext()) {
                 wv.getDepGraph().get(name).add((String)i.next());
