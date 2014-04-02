@@ -1,0 +1,18 @@
+module tests.language.babyfood;
+
+behavior Man {
+
+        void eat (Food f) {
+		token dataf=f<-toString();
+		toString() @ combineString(token," eats " ) @
+		combineString(token,dataf) @
+                standardOutput<-println(token);
+        }
+
+	String combineString(String str1, String str2) {return str1+str2;}
+
+	String toString(){
+	    return "Man";
+	}
+
+}

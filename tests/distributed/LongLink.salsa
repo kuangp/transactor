@@ -1,0 +1,34 @@
+module tests.distributed;
+
+import java.io.*;
+import java.util.*;
+
+behavior LongLink { 
+
+  int n=0;
+  LongLink(int data) {
+    n=data;
+  }
+
+  int rec(int x) {System.out.println("--"+n);return n+x;}
+  
+  int compute() {
+    if (n<=0) {return 1;}
+    LongLink ll= new LongLink(n-1);
+    token x = ll<-compute();
+System.out.println("++"+n);
+    rec(x) @ currentContinuation; 
+  }
+ 
+  void act(String args[]) {
+    try{
+      n = Integer.parseInt(args[0]);
+      LongLink x= new LongLink(n) at (new UAN(args[1]),null);
+      x<-migrate(args[2])@x<-compute()@rec(token)@standardOutput<-println(token);
+    } catch (Exception e) {
+	System.err.println("USAGE:java tests.distributed.LongLink <# of actors> <rmsp address>");	
+    }    
+    
+  }
+
+}

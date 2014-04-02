@@ -1,0 +1,38 @@
+module examples.chat;
+//Two Speakers chat in a chat session initialized by the actor Chat
+
+
+behavior Chat{
+	void chatSession(Speaker s1, Speaker s2) {
+		for (int i=0;i<3; i++)
+		{
+			s1<-whoAmI() @ 
+			s1<-talk(self,token, ":Hey what's up?  ") @
+			s2<-whoAmI() @
+			s2<-talk(self, token, ":I am ok thanks!  ");
+		}
+	}
+
+	void reply(String replyMsg) {
+		standardOutput<-println(replyMsg);
+	
+	}
+	
+	void act(String args[]) {
+		if(args.length != 2 ){
+			standardOutput<-println("Usage: java -Duan=myuan examples.chat.Chat <friendUAN1> <friendUAN2>");
+			return;
+		}
+		
+		try {
+		
+		  Speaker speaker1 =(Speaker) Speaker.getReferenceByName(args[0]) ;
+		  Speaker speaker2 =(Speaker) Speaker.getReferenceByName(args[1]) ;
+		  chatSession(speaker1, speaker2);					
+		} catch (Exception e) {			
+		  standardOutput<-println("Usage: java examples.chat.Chat <friendUAN1> <friendUAN2>");
+		  return;
+		}
+	}
+}
+

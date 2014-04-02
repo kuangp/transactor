@@ -1,0 +1,16 @@
+module examples.cell;
+
+behavior CellTester{
+
+    void act(String args[]){
+	Cell c = new Cell(new Integer(5));
+	standardOutput<-print("Initial Value:") @
+	    c<-get()@
+	    standardOutput<-println(token) @
+	    c<-set(10)@
+	    standardOutput<-print("New Value:") @
+	    c<-get()@
+	    standardOutput<-println(token); 
+    }
+
+}

@@ -1,0 +1,18 @@
+module examples.numbers;
+
+behavior Incrementer {
+
+    Number number;
+    int i;
+
+    Incrementer(Number number){
+	this.number = number;
+	i = 0;
+    }
+
+    void go(){
+	if ((i++)==100)	return;
+	number<-print() @ number<-inc() @ this<-go();
+    }
+
+}

@@ -1,0 +1,18 @@
+module tests.language;
+
+behavior CurrentContinuation{
+
+    int compute(){
+	// return(add(4,1)); is INCORRECT:  it is equivalent to return(VOID);
+	// instead, in Salsa you would write:
+	add(4,1) @ currentContinuation;
+    }
+
+    int add(int n1, int n2){return n1+n2;}
+
+    void act(String args[]){
+	compute() @ standardOutput<-println(token);
+	compute() @ add(token,2) @ standardOutput<-println(token);
+    }
+
+}

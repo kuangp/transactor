@@ -1,0 +1,48 @@
+module tests.localgc;
+
+behavior ContTest {
+  Integer f1() {return new Integer(1);}
+  Integer f2(Integer i) {return new Integer(i.intValue()+1);}
+  Integer f3() {return new Integer(3);}
+  Integer f4(Integer i) {return new Integer(i.intValue()+1);}
+  Integer f5(Object[] obj) {
+    int sum=0;
+    for (int i=0;i<obj.length;i++) {
+      int a=((Integer)obj[i]).intValue();
+      sum+=a;
+    }
+    return new Integer(sum);
+  }   
+
+  String f6() {return "test!";}
+
+  String f7(Integer a, String b) {return b+","+a;}
+
+  public String f8() {
+    if (true) {join{f6();f6();f6();}@f6()@currentContinuation;}
+    return null;
+  }
+
+  public void f9(Object[] obj){
+    for (int i=0;i<obj.length;i++) {System.out.print(obj[i]);System.out.print(" ");}
+    System.out.println("");
+  }
+
+  void act(String[] args) {
+    join{
+      join{f1()@f2(token);f3()@f4(token);}@f5(token);
+      join{f1()@f2(token);f3()@f4(token);}@f5(token);
+      join{f1()@f2(token);f3()@f4(token);}@f5(token);
+      join{f1()@f2(token);f3()@f4(token);}@f5(token);
+    } @
+    f5(token)@standardOutput<-println(token);
+
+    //token x1=join{f1()@f2(token);f3()@f4(token);}@f5(token);
+    //token x1=self<-f6();
+    //token x2=self<-f6();
+    //self<-f7(x1,x2)@standardoutput(token);
+    join {f1()@f2(token);f3()@f4(token);f8();}@f9(token);
+  }
+
+
+}

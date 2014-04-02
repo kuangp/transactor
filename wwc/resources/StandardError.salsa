@@ -1,0 +1,29 @@
+module wwc.resources;
+
+import salsa.resources.ErrorService;
+
+public behavior StandardError implements ErrorService{
+	public StandardError() {
+	}
+
+	public void print(Object p)		{ System.err.print(p); }
+	public void print(boolean p)		{ System.err.print(p); }	
+	public void print(char p)		{ System.err.print(p); }
+	public void print(byte p)		{ System.err.print(p); }
+	public void print(short p)		{ System.err.print(p); }
+	public void print(int p)		{ System.err.print(p); }
+	public void print(long p)		{ System.err.print(p); }
+	public void print(float p)		{ System.err.print(p); }
+	public void print(double p)		{ System.err.print(p); }
+
+	public void println(Object p)		{ System.err.println(p); }
+	public void println(boolean p)		{ System.err.println(p); }
+	public void println(char p)		{ System.err.println(p); }
+	public void println(byte p)		{ System.err.println(p); }
+	public void println(short p)		{ System.err.println(p); }
+	public void println(int p)		{ System.err.println(p); }
+	public void println(long p)		{ System.err.println(p); }
+	public void println(float p)		{ System.err.println(p); }
+	public void println(double p)		{ System.err.println(p); }
+	public void println()			{ System.err.println(); }
+}

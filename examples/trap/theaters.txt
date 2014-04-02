@@ -1,0 +1,4 @@
+io.wcl.cs.rpi.edu:4041
+europa.wcl.cs.rpi.edu:4041
+callisto.wcl.cs.rpi.edu:4040
+jupiter.wcl.cs.rpi.edu:4040

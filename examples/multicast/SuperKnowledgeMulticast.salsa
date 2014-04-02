@@ -1,0 +1,37 @@
+module examples.multicast;
+
+behavior SuperKnowledgeMulticast{
+    
+    AwareActor[] actors;
+    long initialTime;
+
+    long ack(){
+	return System.currentTimeMillis() - initialTime;
+    }
+
+    void act(String args[]){
+	try{
+	int howMany = Integer.parseInt(args[0]);
+	AwareActor[] actors = new AwareActor[howMany];
+	for (int i = 0; i< howMany; i++){
+	    actors[i] = new AwareActor();
+	}
+	initialTime = System.currentTimeMillis();
+        standardOutput<-print("Time (ms) for super knowledge multicast:\nPhase 0: ") @
+        join {
+		for (int i = 0; i < howMany; i++) actors[i]<-m(); 
+	} @ ack() @ standardOutput<-println(token) @
+
+	standardOutput<-print("Phase 1: ") @
+        join {
+		for (int i = 0; i < howMany; i++) actors[i]<-ok(); 
+	} @ ack() @ standardOutput<-println(token) @
+
+	standardOutput<-print("Phase 2: ") @
+        join {
+		for (int i = 0; i < howMany; i++) actors[i]<-ok(); 
+	} @ ack() @
+	standardOutput<-println(token);
+	} catch (Exception e) {standardOutput<-println("Usage: java examples.multicast.SuperKnowledgeMulticast <# of iterations>");}
+    }
+}

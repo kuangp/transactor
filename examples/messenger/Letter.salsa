@@ -1,0 +1,35 @@
+module examples.messenger;
+
+behavior Letter {
+
+    Sender sender;
+    String name;
+
+    Letter(Sender _sender, String _name){
+		sender = _sender;
+		name = _name;
+    }
+    
+    public String returnName(){
+		return name;
+    }
+
+    public void retry(Recipient recipient){
+	if (recipient != null)
+	   recipient<-process(self) @ self<-retry(token);
+    }
+    
+    public void failed(Recipient recipient){
+		if (recipient != null){
+	    	try {
+				Thread.currentThread().sleep(1000);
+	    	} catch (InterruptedException ie){}
+	    	recipient<-process(self) @ self<-failedTwice(token);
+		}
+    }
+
+    public void failedTwice(Recipient recipient){
+	if (recipient != null)
+	    sender<-log(self);
+    }
+}

@@ -1,0 +1,17 @@
+module examples.numbers;
+
+behavior SequentialNumbers {
+
+    void act(String args[]){
+	
+		Number number = new Number(0);
+
+		AdderPrinter adderprinter = new AdderPrinter(number);
+
+		for (int i = 0 ; i<10; i++){
+		    	adderprinter<-go();
+		}
+
+		standardOutput<-println();
+    }
+}

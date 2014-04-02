@@ -1,0 +1,29 @@
+module examples.multicast;
+
+behavior AcknowledgedMulticast{
+    SimpleActor[] actors;
+    long initialTime;
+
+    long ack(){
+	return System.currentTimeMillis() - initialTime;
+    }
+
+    void act(String[] args){
+	try{
+	  int howMany = Integer.parseInt(args[0]);
+          initialTime = System.currentTimeMillis();
+
+          standardOutput<-print("Time for acknowledged multicast: ") @
+  	  join {
+		for (int i = 0; i < howMany; i++) {
+			SimpleActor simpleActor = new SimpleActor();
+			simpleActor<-m();
+		}
+	  } @ ack() @
+	  standardOutput<-print(token) @
+	  standardOutput<-println(" ms.");
+	} catch (Exception e) {
+		standardOutput<-println("Usage: java examples.multicast.AcknowledgedMulticast <iteration #>");
+	}
+    }
+}

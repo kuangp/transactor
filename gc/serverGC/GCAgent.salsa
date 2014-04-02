@@ -1,0 +1,81 @@
+module gc.serverGC;
+import salsa.resources.GCServiceAgent;
+import gc.*;
+import java.util.Hashtable;
+
+behavior GCAgent implements GCServiceAgent{
+
+  LocalCollector slgc=ServiceFactory.getGC();
+
+  public GCAgent() {}
+
+  /******************************
+   * for server GC
+   ******************************/
+
+		public ActorReference requestSnapShot(String name) {
+			//slgc = ServiceFactory.getGC();
+			boolean res = slgc.requestSnapShot();
+			return new WeakReference(self);
+		}
+		public SnapshotList requestVirtualMigration(String name) {
+			//slgc = ServiceFactory.getGC();
+			SnapshotList vm = slgc.requestVirtualMigration();
+			return vm;
+		}
+		public void requestKilling(String name, Vector victimList) {
+			//slgc = ServiceFactory.getGC();
+			slgc.requestKilling(victimList);
+		}
+
+  /*******************************
+   * for cycle detective
+   *******************************/
+  Hashtable snapshots=new Hashtable();
+  Hashtable victims=new Hashtable();
+
+  public ActorSnapshot looseFindNonLocal(String actorID) {
+    return slgc.isNonLocalActor(actorID);
+  }
+
+  //public Boolean looseInLocalHost(String actorID) {
+  //  return new Boolean(slgc.isInLocalHost(actorID));
+  //}
+
+  //public UAL looseGetRemoteUAL(UAN uanData) {
+  //  return slgc.getRemoteUAL(uanData);
+  //}
+
+  public void reserveSnapshot(String detectiveName) {
+    SnapshotList vm = slgc.requestVirtualMigration();
+    snapshots.put(detectiveName,vm);
+    victims.put(detectiveName,new Vector());
+  }
+
+  public Object[] returnInvList(String detectiveName, String actorName) {
+    try {
+      SnapshotList vm=(SnapshotList)snapshots.get(detectiveName);
+      ActorSnapshot target=(ActorSnapshot)vm.get(actorName);
+      if (target==null || target.isUnblocked()) {
+	Object[] ret={new Boolean(false)};
+	return ret;
+      }
+      Vector victimList=(Vector)victims.get(detectiveName);
+      victimList.addElement(actorName);
+      return target.iList;
+    } catch (Exception e) {}
+    return null;
+  }
+
+  public void cycleKilling(String detectiveName) {
+    snapshots.remove(detectiveName);
+    Vector victimList=(Vector)victims.remove(detectiveName);
+    slgc.requestKilling(victimList);
+  }
+
+  public void noCycleResume(String detectiveName) {
+    snapshots.remove(detectiveName);
+    victims.remove(detectiveName);
+  }
+
+}

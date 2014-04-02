@@ -1,0 +1,31 @@
+module examples.messenger;
+
+behavior Recipient {
+
+    int failures = 0;
+
+    void showMessage(String name, String msg) {
+	standardOutput<-println(name + msg);
+    }
+
+    Recipient process(Letter letter){
+		switch (failures++){
+		case 0:
+		    // Fail
+		    letter<-returnName()@
+		    showMessage(token," failed!");
+		    return self;
+		case 1:
+		    // Fail one more time
+		    letter<-returnName()@
+		    showMessage(token," failed again!");
+		    return self;
+		default:
+		    // Succeed the third time:
+		    letter<-returnName()@
+		    showMessage(token," was successful!");
+		    return null;
+		}
+    }
+
+}

@@ -1,0 +1,31 @@
+module examples.multicast;
+
+behavior GlobalKnowledgeMulticast{
+    
+    AwareActor[] actors;
+    long initialTime;
+
+    long ack(){
+	return System.currentTimeMillis() - initialTime;
+    }
+
+    void act(String args[]){
+	try{
+	int howMany = Integer.parseInt(args[0]);
+	AwareActor[] actors = new AwareActor[howMany];
+	for (int i = 0; i< howMany; i++){
+	    actors[i] = new AwareActor();
+	}
+
+	initialTime = System.currentTimeMillis();
+        standardOutput<-print("Time for global knowledge multicast: ") @
+        join {
+		for (int i = 0; i < howMany; i++) actors[i]<-m();
+	} @ join {
+		for (int i = 0; i < howMany; i++) actors[i]<-ok();
+	} @ ack() @
+	standardOutput<-print(token) @
+	standardOutput<-println(" ms.");
+	} catch (Exception e) {standardOutput<-println("Usage: java examples.multicast.GlobalKnowledgeMulticast <iteration #>");}
+    }
+}

@@ -1,0 +1,16 @@
+
+module gctest.local;
+
+behavior Creation {
+    int n;
+	Creation (int n) {
+		this.n = n;
+	}
+
+	void act(String args[]) {
+	    Creation creation;
+		n = Integer.parseInt(args[0]);
+		for (int i=0;i<n;i++) { creation=new Creation(i);}
+		standardOutput<-println("done");
+	}
+}

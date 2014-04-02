@@ -1,0 +1,27 @@
+module examples.cell;
+
+behavior MovingCellTester{
+
+    void act(String args[]){
+
+	if (args.length != 3) {
+	    standardOutput<-println( "Usage: java examples.cell.MovingCellTester <UAN> <UAL1> <UAL2>" );
+	    return;
+	}
+
+	Cell c = new Cell(new Integer(5)) at (new UAN(args[0]), new UAL(args[1]));
+	    standardOutput<-print("Initial Value:") @
+	    c<-get() @
+	    standardOutput<-println(token) @
+ 	    c<-set(new Integer(10)) @
+ 	    standardOutput<-print("New Value:") @
+ 	    c<-get() @
+ 	    standardOutput<-println(token) @
+ 	    c<-migrate(args[2]) @
+ 	    c<-set(new Integer(20)) @
+ 	    standardOutput<-print("New Value at New Location:") @
+ 	    c<-get() @
+	    standardOutput<-println(token);
+    }
+
+}

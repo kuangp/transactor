@@ -1,0 +1,30 @@
+module tests.distributed;
+
+behavior CrazyMigration{
+  byte[] data=new byte[1024];
+  String ual1,ual2;
+  UAL home;
+
+  public CrazyMigration(){}
+
+  public void test1(Integer turnObj) {
+    int turn=turnObj.intValue();
+    if (turn<0) {migrate(home)@currentContinuation;}
+    else if (turn % 2==0) { migrate(ual1+"test"+turn)@test1(new Integer(turn-1))@currentContinuation;}
+    else if (turn % 2==1) { migrate(ual2+"test"+turn)@test1(new Integer(turn-1))@currentContinuation;}
+  }
+
+  public void act(String args[]) {
+    try{
+      Integer round=new Integer(args[0]);
+      ual1="rmsp://"+args[1]+"/";
+      ual2="rmsp://"+args[2]+"/";
+      home=this.getUAL();
+      if (this.getUAN()==null) {standardOutput<-println("-Duan=??");}
+      else{
+        test1(round)@standardOutput<-println("I am home!");
+      }
+    }catch (Exception e) {standardOutput<-println("java -Duan=<uan> tests.distributed.CrazyMigration <#> <host1> <host2>");}
+  }
+
+}

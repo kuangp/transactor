@@ -1,0 +1,8 @@
+module tests.language;
+
+behavior NoSuchMessage {
+
+    void act(String[] args){
+	self<-m();
+    }
+}

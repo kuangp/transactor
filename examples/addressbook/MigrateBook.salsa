@@ -1,0 +1,14 @@
+module examples.addressbook;
+
+behavior MigrateBook {
+
+	void act(String args[]){
+		if (args.length != 2) {
+			standardOutput<-println( "Usage: java examples.addressbook.MigrateBook <AddressBookUAN> <NewUAL>" );
+			return;
+		}
+
+		AddressBook book = (AddressBook)AddressBook.getReferenceByName(new UAN(args[0])); 
+		book<-migrate(args[1]);
+	}
+}

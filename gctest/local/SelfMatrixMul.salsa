@@ -1,0 +1,159 @@
+
+module gctest.local;
+import java.util.*;
+import java.io.*;
+
+behavior SelfMatrixMul {
+  double[][] org;
+
+  public SelfMatrixMul(double[][] a) {
+    this.org=a;
+  }
+
+  public SelfMatrixMul() {
+    this.org=null;
+  }
+
+  public double[][] mul(double[][] A,double[][] B) {
+    try {
+      int numRowsA = A.length; // number of rows in A
+      int numColsA = A[0].length; // number of columns in A
+      int numColsB = B[0].length; // number of columns in B
+
+      // define result matrix C
+      double[][] C = new double[numRowsA][numColsB];
+
+      // matrix multiplication
+      for (int a = 0; a < numRowsA; a++) {
+            for (int b = 0; b < numColsB; b++) {
+                double sum = 0;
+                for (int col = 0; col < numColsA; col++) {
+                    sum += A[a][col] * B[col][b];
+                }
+                C[a][b] = sum;
+            }
+      }
+      return C;
+    } catch (Exception e) {return null;}
+  }
+
+  public double[][] add(double[][] A, double[][] B) {
+    try {
+      int numRowsA = A.length; // number of rows in A
+      int numColsA = A[0].length; // number of columns in A
+      int numColsB = B[0].length; // number of columns in B
+
+      // define result matrix C
+      double[][] C = new double[numRowsA][numColsA];
+
+      // matrix addition
+      for (int a = 0; a < numRowsA; a++) {
+            for (int b = 0; b < numColsB; b++) {
+                C[a][b] = A[a][b] + B[a][b];
+            }
+      }
+      return C;
+    } catch (Exception e) {return null;}
+  }
+
+  //comput A^e where e>0
+  public double[][] exp(double[][] A, Integer eInteger) {
+    int MASK=1;
+    int e=eInteger.intValue();
+    double[][] res=new double[A.length][A.length];  
+    double[][] temp=this.add(res,A);
+    res=this.add(res,A);
+    if (e>0) {
+      while (e>0) {
+        if ((e&MASK)>0) {
+          res=this.mul(temp,res);
+System.out.print("--");
+this.show(res);
+        }
+        temp=this.mul(temp,temp);
+        e=e>>1;
+      }
+      return res;
+    } else if (e==0) {return this.I(A.length,A.length);}
+return null;
+  }
+
+  public double[][] I(int row,int col) {
+    double[][] res=new double[row][col];
+    for(int i=0,j=0;i<row && j<col;i++,j++) {
+      res[i][j]=1;
+    } 
+    return res;
+  }
+
+  public void show(double[][] C) {
+    // show result on screen
+    try {
+      for (int row = 0; row < C.length; row++) {
+        for (int col = 0; col < C[0].length; col++) {
+          System.out.print(C[row][col] + " ");
+        }
+        System.out.println();
+      }
+    }catch (Exception e) {System.out.println("Wrong Data!");}
+  }
+
+  public void split(Integer e) {
+    int e1=15 & e.intValue();
+    int e2= (240 &  e.intValue())>>4;
+    int e3= (3840 & e.intValue())>>8;
+    int e4= (61440 &  e.intValue())>>12;
+    int e5=e.intValue() & (~(65535));
+
+    SelfMatrixMul m1=new SelfMatrixMul();
+    SelfMatrixMul m2=new SelfMatrixMul();
+    SelfMatrixMul m3=new SelfMatrixMul();
+    SelfMatrixMul m4=new SelfMatrixMul();
+    SelfMatrixMul m5=new SelfMatrixMul();
+    SelfMatrixMul m6=new SelfMatrixMul();
+    SelfMatrixMul m7=new SelfMatrixMul();
+    SelfMatrixMul m8=new SelfMatrixMul();
+    SelfMatrixMul m9=new SelfMatrixMul();
+    
+     token t1=m1<-exp(org,new Integer(e1));
+     token t2=m2<-exp(org,new Integer(16));
+     token t3=m3<-exp(org,new Integer(e2));
+     token t4=m4<-exp(org,new Integer(256));
+     token t5=m5<-exp(org,new Integer(e3));
+     token t6=m6<-exp(org,new Integer(4096));
+     token t7=m7<-exp(org,new Integer(e4));
+     token t8=m8<-exp(org,new Integer(65536));
+     token t9=m9<-exp(org,new Integer(e5));    
+
+    self<-mul(t1,t2) @ self<-mul(token,t3) @ self<-mul(token,t4) 
+     @ self<-mul(token,t5) @ self<-mul(token,t6) @ self<-mul(token,t7) 
+      @ self<-mul(token,t8)  @ self<-mul(token,t9) @show(token);
+  }
+
+  public void act(String[] args) {
+    int arow=0,times=0;
+    try{
+	BufferedReader data1 = new BufferedReader(new InputStreamReader(new FileInputStream(args[0])));
+      arow=Integer.parseInt(args[1]);
+      times=Integer.parseInt(args[2]);
+      org=new double[arow][arow];
+
+      for(int i=0;i<arow;i++) {
+        String line=data1.readLine();
+        if (line==null || line.length()==0) {i--;continue;}
+        StringTokenizer st=new StringTokenizer(line);
+        for (int j=0;j<arow;j++) {
+          org[i][j]=Double.parseDouble(st.nextToken());
+        }
+      }
+
+    } catch (Exception e) {
+        System.err.println(e);
+        System.err.println("USAGE: java -cp <lib> gctest.local.SelfMatrixMul <filename> <matrix size> <mul times>");
+        return;
+    }
+
+    self<-exp(org,new Integer(times))@self<-show(token);
+    //self<-split(new Integer(times))@self<-show(token);
+  }
+}

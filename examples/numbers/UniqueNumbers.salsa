@@ -1,0 +1,12 @@
+module examples.numbers;
+
+behavior UniqueNumbers {
+
+    void act(String args[]){
+	
+	Number number = new Number(0);
+	Incrementer incrementer = new Incrementer(number);
+
+	incrementer<-go() @ standardOutput<-println();
+    }
+}

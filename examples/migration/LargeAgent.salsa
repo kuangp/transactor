@@ -1,0 +1,31 @@
+module examples.migration;
+
+behavior LargeAgent extends Agent  implements ActorService{
+
+    byte[] largeData;
+
+    void setSize (int size){
+	largeData = new byte[size];
+	standardOutput<-println("An array with size " + size + " is created...");	
+    }
+
+    void act(String[] args){
+		try {
+			LargeAgent agent = new LargeAgent() at (new UAN(args[1]), null);
+			token synchToken1 = setSize(new Integer(args[0]));
+			token synchToken2 = agent<-printItinerary() : waitfor(synchToken1);
+
+			for (int i = 2; i < args.length; i++) {
+				agent<-migrate(args[i]) : waitfor(synchToken2) @
+				agent<-addLocation( args[i] ) @
+				agent<-printItinerary() @
+				synchToken2 = agent<-printTime();
+			}
+		} catch (Exception e){
+			standardOutput<-println(e);
+			standardOutput<-println("Usage: java migration.LargeAgent <size> <UAN> (<UAL>)*");
+		}
+
+    }
+
+}

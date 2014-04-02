@@ -1,0 +1,78 @@
+ module examples.trap;
+
+import java.io.*;
+
+
+
+/* TrapWorker.salsa -- Worker for Parallel Trapezoidal Rule
+ *
+ */
+behavior TrapWorker{
+
+	double       local_a;   // Left endpoint my actor  
+    	double       local_b;   // Right endpoint my actor 
+	int 	 	 local_n;   // Number of trapezoids for my calculation 
+	double 		 h;   // Trapezoid base length 
+   
+	
+	            
+ 	TrapWorker(double mya, double myb, int myn, double myh)
+	{
+		local_a = mya;
+		local_b = myb;
+		local_n = myn;
+		h 	  = myh; 
+	}
+
+	Double trap(double local_a ,double local_b,int local_n ,double h) 
+	{
+
+    		double integral;   /* Store result in integral  */
+    		double x;
+    		int i;
+
+		//integral = (f(local_a) + f(local_b))/2.0;
+
+		token f_local_a = f(local_a);
+		token f_local_b = f(local_b);
+
+    		token integral = startIntegral(f_local_a, f_local_b);
+
+		join{
+		
+    			token x = local_a;
+			for (i = 1; i <= local_n-1; i++) {
+				add(x,h) -> next x;
+				f(x)@add(integral, token) -> next integral;     //x = x + h; integral = integral + f(x);
+    			}
+    		}@multiply(integral, h)@currentContinuation;
+	
+
+		//integral = integral*h;
+    		//return integral;
+	}
+
+
+	Double f(Double d) 
+	{	
+		double dv = d.doubleValue();
+    		return new Double(5*dv*d*dv*dv);
+	}
+	
+	Double add(Double d, Double f)
+	{	
+		double dv = d.doubleValue();
+		double fv = f.doubleValue();
+		return new Double(dv+fv);
+	} 
+	 
+	Double multiply(Double d, Double f)
+	{
+		double dv = d.doubleValue();
+		double fv = f.doubleValue();
+		return new Double(dv*fv);
+	}
+  
+
+}
+

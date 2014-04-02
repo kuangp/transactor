@@ -1,0 +1,17 @@
+module transactor.language;
+
+import java.io.Serializable;
+import java.util.HashMap;
+import java.util.HashSet;
+
+behavior Transactor implements Serializable {
+    private Worldview wv;
+    private History h;
+    private String name;
+
+    public Transactor(String name) {
+        this.name = name;
+        wv = new Worldview();
+        h = new History();
+    }
+}

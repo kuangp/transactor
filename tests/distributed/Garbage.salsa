@@ -1,0 +1,83 @@
+module tests.distributed;
+
+import java.io.*;
+import java.util.*;
+
+behavior Garbage {
+  int myid=0;
+  Garbage prev;
+
+  public Garbage(Garbage ref, Integer myid) {
+    prev=ref;
+    this.myid=myid.intValue();
+  }
+
+  public void set(Garbage ref) {prev=ref;}
+
+  public void crazy(Vector theaters) {
+    join {
+	  for (int i=1;i<100;i++) {
+	    self<-migrate((String)theaters.get(i%(theaters.size())));
+	  }
+	} @ dummy() @ currentContinuation;
+  }
+
+  public void passing() {
+    try{Thread.sleep(500);} catch (Exception e) {}
+    //WeakReference ref=new WeakReference(prev);
+    prev<-passing();
+  }
+
+  public void dummy() {}
+
+  transient String theatersFile="theaters.txt";
+  transient String nameServer="";
+
+  void act(String args[]) {
+    try{
+	int size=(new Integer(args[0])).intValue();
+        Garbage[] actors=new Garbage[size];
+	if (args.length>2) {theatersFile=args[2];}
+	nameServer=args[1];
+
+	// read available theaters
+	Vector theaters = new Vector();
+	String theater;
+	try {
+
+	  BufferedReader in = new BufferedReader(new FileReader(theatersFile));
+	  while ((theater = in.readLine())!= null){theaters.add(theater);}
+	  in.close(); 
+	} catch (IOException ioe){
+	  standardOutput<-println("[error] Can't open the file "+theatersFile+" for reading.");
+	}
+
+	actors[0]=new Garbage(null,new Integer(0)) at
+		(new UAN("uan://"+nameServer+"/garbage/"+0), 
+                 null
+                );
+
+	for (int i=1;i<actors.length;i++) {
+	  actors[i]=new Garbage(actors[i-1],new Integer(i)) at
+		(new UAN("uan://"+nameServer+"/garbage/"+i), 
+                 null
+                );
+	}
+	actors[0]<-set(actors[actors.length-1])@
+	migration(actors,theaters)@
+        //actors[0]<-passing()@
+	//actors[0]<-crazy(theaters)@
+	standardOutput<-println("Finished!");
+	;
+    } catch (Exception e) {
+      System.err.println("USAGE:java tests.distributed.Garbage <N> <name server> <theater file>");}
+    }
+
+    public void migration(Garbage[] actors,Vector theaters) {
+	join {
+	  for (int i=0;i<actors.length;i++) {
+	    actors[i]<-migrate((String)theaters.get(i%(theaters.size())));
+	  }
+	} @ dummy() @ currentContinuation;
+    }
+}

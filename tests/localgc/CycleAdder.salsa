@@ -1,0 +1,48 @@
+/*it accepts only one argument n.
+ *The result must match 1+2+...+n
+ */
+
+module tests.localgc;
+
+behavior CycleAdder {
+    
+    private int n;
+    private int targetN;
+    int currentSum=0;
+    CycleAdder fp;
+    
+    CycleAdder(int targetN,int n){
+	this.targetN=targetN;
+	this.n = n;
+        currentSum=0;
+        fp=null;
+    }
+
+    void compute(CycleAdder next){
+	if (this.n==0) {
+        fp=next;
+        fp<-add(0);
+      } else {
+        CycleAdder ca=new CycleAdder(targetN,this.n-1);
+        fp=ca;
+        ca<-compute(next);
+      }
+    }
+
+    void add(Integer num){
+	if (this.n==0) {System.out.println(this.n+num.intValue());}
+      else {fp<-add(new Integer(this.n+num.intValue()));}
+    }
+
+    void act(String args[]){
+	try {
+	  n = Integer.parseInt(args[0]);
+        targetN=n;
+      }
+      catch (Exception e) {standardError<-print("Parsing arguments error!\n");return;}
+
+         if (targetN>0) {
+        compute(self);
+       } else {standardOutput<-println(""+targetN);}
+    }
+}

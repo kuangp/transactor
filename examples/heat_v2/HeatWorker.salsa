@@ -1,0 +1,202 @@
+module examples.heat_v2;
+
+import java.io.*;
+
+behavior HeatWorker {
+	String id;
+	int intId;
+	int iterations;
+	LowMemoryArray data, next;
+	boolean topOk = false;
+	boolean bottomOk = false;
+	boolean finished = false;
+	boolean reportTime = true;
+
+	ActorReference farmer;
+	Collector collector;
+	public ActorReference top;
+	public ActorReference bottom;
+
+	HeatWorker(int x, int y, int iterations, ActorReference farmer, String id, Collector collector) {
+		this.init(x, y, iterations, farmer, id, collector);
+	}
+
+	public void init(int x, int y, int iterations, ActorReference farmer, String id, Collector collector) {
+		this.farmer = farmer;
+		this.iterations = iterations;
+		this.id = id;
+		intId = Integer.parseInt(id);
+		this.collector = collector;
+
+		data = new LowMemoryArray(x,y);
+		//first and last row represent neighbours data
+		//-1 if not assigned; v if assigned;
+		//topOk and bottomOk determine whether data is "dirty" or not.
+		for (int j = 0; j < y; j++) {
+			data.set(0,j,-1);
+			data.set(x-1,j,-1);
+		}
+
+		//copy inside values
+		for (int i = 0; i < x-2; i++){
+			for (int j = 0; j < y; j++) {
+                                data.set(i,j,20);
+                                if (i == 0 || j == 0 || i == x-1 || j == y-1) data.set(i,j,20.0);
+                                if (j == 0 && i > x/4 && i < 3*x/4) data.set(i,j,100.0);
+			}
+		}
+
+		// temporary matrix
+		next = new LowMemoryArray(x,y);
+		for (int i = 0; i < x; i++){
+			for (int j = 0; j < y; j++) {
+				next.set(i,j,data.get(i,j));
+			}
+		}
+
+		start_time = System.currentTimeMillis();
+	}
+
+	void connectTop(HeatWorker w) {
+		top = w;
+	}
+
+	void connectBottom(HeatWorker w) {
+		bottom = w;
+	}
+
+	void startWork() {
+		if (bottom != null) bottom<-topRow(data.row(data.x-2), self, new Integer(iterations));
+		if (top != null) top<-bottomRow(data.row(1), self, new Integer(iterations));
+		if (bottom == null && top == null) doWork(self, "startWork");
+	}
+
+	Vector bottomRowSources = new Vector();
+	Vector topRowSources = new Vector();
+
+	double[] queuedTopRow = null;
+	double[] queuedBottomRow = null;
+
+	void topRow(double[] row, HeatWorker receivedFrom, int iteration) {
+		topRowSources.add(receivedFrom.getUAL().getIdentifier());
+		if (topRowSources.size() > 15) topRowSources.remove(0);
+
+		if (topOk == true) {
+			if (queuedTopRow != null) {
+				System.err.println(getUAL().getIdentifier() + " RECEIVED EXTRA TOP ROW");
+				System.err.println("\titerations: " + iterations + " from: " + receivedFrom.getUAL().getIdentifier() + " at iteration: " + iteration + ", top: " + top.getUAL().getIdentifier());
+
+				System.err.println("\ttopRowSources:");
+				while (topRowSources.size() > 0) System.err.println("\t\t" + topRowSources.remove(0));
+				System.exit(0);
+			}
+			queuedTopRow = row;
+		} else {
+			for (int i = 0; i < data.y; i++) {
+				data.set(0,i,row[i]);
+			}
+			topOk = true;
+
+			if (!finished && (bottomOk || bottom == null)) {
+				doWork(self, "topRow");
+			}
+		}
+	}
+
+	void bottomRow(double[] row, HeatWorker receivedFrom, int iteration) {
+		bottomRowSources.add(receivedFrom.getUAL().getIdentifier());
+		if (bottomRowSources.size() > 15) bottomRowSources.remove(0);
+
+		if (bottomOk == true) {
+			if (queuedBottomRow != null) {
+				System.err.println(getUAL().getIdentifier() + " RECEIVED EXTRA BOTTOM ROW");
+				System.err.println("\titerations: " + iterations + " from: " + receivedFrom.getUAL().getIdentifier() + " at iteration: " + iteration + ", bottom: " + bottom.getUAL().getIdentifier());
+
+				System.err.println("\tbottomRowSources:");
+				while (bottomRowSources.size() > 0) System.err.println("\t\t" + bottomRowSources.remove(0));
+				System.exit(0);
+			}
+			queuedBottomRow = row;
+		} else {
+			for (int i = 0; i < data.y; i++) {
+				data.set(data.x-1,i,row[i]);
+			}
+			bottomOk = true;
+
+			if (!finished && (topOk || top == null)) {
+				doWork(self, "bottomRow");
+			}
+		}
+	}
+
+	long start_time = 0;
+	void doWork(HeatWorker receivedFrom, String msg) {
+		int x = data.x;
+		int y = data.y;
+
+		int from = (top==null?2:1);
+		int to = (bottom==null?x-2:x-1);
+
+		for (int q = 0; q < 50; q++) {
+			for (int i = from; i < to; i++) {
+				for (int j=1; j < (y-1); j++) {
+					next.set( i,j, 0.25 * (data.get(i-1,j) + data.get(i,j-1) + data.get(i+1,j) + data.get(i,j+1)) );
+				}
+			}
+		}
+
+		LowMemoryArray temp = next;
+		next = data;
+		data = temp;
+
+		if (top != null)	top<-bottomRow(data.row(1), self, new Integer(iterations));
+		if (bottom != null)	bottom<-topRow(data.row(data.x-2), self, new Integer(iterations));
+
+		if (top == null && bottom == null) self<-doWork(self, "doWork");
+
+		topOk = false;
+		bottomOk = false;
+
+		long iteration_time = System.currentTimeMillis() - start_time;
+
+		if (reportTime) {
+			collector<-reportIterationTime(new Integer(intId), new Integer(iterations), new Long(iteration_time));
+		}
+
+		iterations--;
+
+		if (iterations == 0) {
+			LowMemoryArray results = new LowMemoryArray(x-2,y);
+			for (int i = 0; i < x-2; i++) {
+				for (int j = 0; j < y; j++) {
+					results.set(i,j, data.get(i+1,j));
+				}
+			}
+//			farmer<-workFinished(results);
+			farmer<-workFinished();
+			finished = true;
+		}
+
+		if (queuedTopRow != null) {
+			for (int i = 0; i < data.y; i++) {
+				data.set(0,i,queuedTopRow[i]);
+			}
+			topOk = true;
+			queuedTopRow = null;
+		}
+
+		if (queuedBottomRow != null) {
+			for (int i = 0; i < data.y; i++) {
+				data.set(data.x-1,i,queuedBottomRow[i]);
+			}
+			bottomOk = true;
+			queuedBottomRow = null;
+		}
+
+		if ((topOk || top == null) && (bottomOk || bottom == null)) {
+			doWork(self, "doWork");
+		}
+
+		start_time = System.currentTimeMillis();
+	}
+}

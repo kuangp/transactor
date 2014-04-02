@@ -1,0 +1,17 @@
+module examples.numbers;
+
+behavior Printer {
+
+    Number number;
+
+    Printer(Number number){
+	this.number = number;
+    }
+
+    void go(){
+	for (int i = 0; i< 10; i++){
+	    number<-print();
+	}
+    }
+
+}

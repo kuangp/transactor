@@ -1,0 +1,30 @@
+module examples.multicast;
+
+behavior Multicast {
+    SimpleActor[] actors;
+    void setActors(SimpleActor[] actors){
+	this.actors = actors;
+    }
+    long go(){
+	long initialTime = System.currentTimeMillis();
+	for (int i = 0; i< actors.length; i++){
+	    actors[i]<-m();
+	}
+	return System.currentTimeMillis() - initialTime;
+    }
+
+    void act(String[] args){
+	int howMany = Integer.parseInt(args[0]);
+
+	SimpleActor[] actors = new SimpleActor[howMany];
+	for (int i = 0; i< howMany; i++){
+	    actors[i] = new SimpleActor();
+	}
+
+	setActors(actors) @
+        standardOutput<-print("Time for multicast: ") @
+        go() @
+	standardOutput<-print(token) @
+	standardOutput<-println(" ms.");
+    }
+}

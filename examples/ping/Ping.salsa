@@ -1,0 +1,32 @@
+module examples.ping;
+
+behavior Ping {
+    long startTime;
+    void ping(String remoteUAN){
+	UniversalActor ref=(UniversalActor)UniversalActor.getReferenceByName(remoteUAN);
+        standardOutput <- println("Sending PING to remote service at "+remoteUAN);
+
+	startTime()@
+	ref<-echo(self);
+    }
+
+    void startTime() {
+	startTime = System.currentTimeMillis();
+	standardOutput<-println("start timimg!") @ currentContinuation;
+    }
+    
+    void pong() {
+	long roundTrip = System.currentTimeMillis()-startTime;
+	standardOutput<-println("Received ECHO within "+
+				String.valueOf(roundTrip)+" ms.")@
+	    standardOutput<-println("Message sending avg time: "+
+				    String.valueOf(roundTrip/2)+" ms.");
+	}
+
+    void act(String args[]){
+	try {ping(args[0]);} 
+        catch (Exception e) {
+		standardOutput<-println("Usage: java examples.ping.Ping <remote_uan of service>");
+        }
+    }
+}

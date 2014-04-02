@@ -1,0 +1,223 @@
+module examples.heat_v2;
+
+import java.io.*;
+import java.util.*;
+
+behavior Heat {
+	int iterations;
+	int x;
+	int y;
+	int number_actors;
+	long initialTime;
+	String filename;
+
+	Collector collector;
+	HeatWorker[] workers;
+
+	void produceFile(LowMemoryArray data) {
+		try {
+			PrintWriter out = new PrintWriter(new FileWriter(filename));
+
+			out.println(x+" "+y);
+			for(int i=0;i<x;i++) {
+				for(int j=0;j<y;j++) {
+					try {
+						out.println(data.get(i,j));
+					} catch (Exception e) {
+						continue;
+					}
+				}
+			}
+			out.flush();
+			out.close();
+		} catch (IOException ioe){
+			standardOutput<-println("[error] Can't open the file "+filename+" for writing.");
+		}
+	}
+
+	void doWork(int iterations, String[] theaters, String name_server) {
+		// divide number of rows into actors
+		int rowsPerActor = x/number_actors;
+
+		//create actors and assign data
+		workers = new HeatWorker[number_actors];
+
+		collector = new Collector(number_actors, iterations);
+
+		if (System.getProperty("random") != null) {
+			java.util.Random rand = new java.util.Random(13);
+
+			for (int i = 0; i < number_actors; i++) {
+				int target_theater = rand.nextInt(theaters.length-1);
+				System.err.println("Creating worker: " + i + " at: " + theaters[target_theater] + "heatworker_" + i);
+
+				workers[i] = new HeatWorker(rowsPerActor, y, iterations, self, String.valueOf(i), collector)
+							at (new UAN(name_server + "heatworker_" + i), 
+							    new UAL(theaters[target_theater] + "heatworker_" + i));
+			}
+		} else if (theaters != null) {
+			int a = 0;
+			double actors_per_theater = (double)number_actors/(double)theaters.length;
+			for (int i = 0; i < theaters.length; i++) {
+				for (int j = (int)java.lang.Math.round(i*actors_per_theater); j < java.lang.Math.round((i+1)*actors_per_theater); j++) {
+					System.err.println("Creating worker: " + a + " at: " + theaters[i] + "heatworker_" + a);
+					workers[a] = new HeatWorker(rowsPerActor, y, iterations, self, String.valueOf(a), collector)
+								at (new UAN(name_server + "heatworker_" + a), 
+								    new UAL(theaters[i] + "heatworker_" + a));
+					a++;
+				}
+			}
+		} else {
+			for (int a = 0; a < number_actors; a++) {
+				workers[a] = new HeatWorker(rowsPerActor, y, iterations, self, String.valueOf(a), collector);
+			}
+		}
+
+		// connect worker neighbours
+
+		if (number_actors > 1) {
+			standardOutput<-println("Connecting worker neighbors") @
+			join {
+				for (int a = 0; a < number_actors; a++) {
+					if (a > 0) workers[a]<-connectTop(workers[a-1]);
+					if (a < number_actors-1) workers[a]<-connectBottom(workers[a+1]);
+				}
+			} @
+			doWork2();
+		} else {
+			doWork2();
+		}
+	}
+
+	public void doWork2() {
+		for (int i = 0; i < number_actors; i++) {
+//			if (i%2 == 0) {
+				workers[i]<-startWork();
+//			}
+		}
+
+		initialTime = System.currentTimeMillis();
+		
+		standardOutput<-println("Starting the computation at: " + initialTime);
+	}
+
+	Vector results = new Vector();
+	int work_received = 0;
+	public void workFinished() {
+		work_received++;
+		if (work_received == number_actors) {
+			collector<-printTimes() @
+			endTimer() @
+			standardOutput<-println("Computation is done, received work from: " + work_received + " actors!");
+		}
+	}
+
+
+	public void workFinished(LowMemoryArray work) {
+		results.add(work);
+		work_received++;
+
+		if (work_received == number_actors) {
+			endTimer() @
+			composeMatrix() @
+			produceFile(token) @
+			standardOutput<-println("Computation is done, received work from: " + work_received + " actors!");
+		}
+	}
+
+	public void actor_split() {
+		System.err.println("Farmer received split!");
+		number_actors++;
+	}
+
+	public void actor_merged() {
+		System.err.println("Farmer received merge!");
+		number_actors--;
+	}
+
+	void endTimer() {
+		long finalTime = System.currentTimeMillis();
+		long runningTime = finalTime - initialTime;
+		double processingRate = 1.0*iterations*(x-2)*(y-2)/runningTime;
+
+		System.out.println("Time for " + iterations + " iterations on " + x + "," + y + " grid: " + runningTime + "ms.");
+		System.out.println("number of workers: " + number_actors);
+	}
+
+	LowMemoryArray composeMatrix () {
+		//receives an array of sub-matrices for each actor's work
+		LowMemoryArray cresults;
+		LowMemoryArray m = new LowMemoryArray(x,y);
+
+		int i = 0;
+		for (int a = 0; a < results.size(); a++) {
+			cresults = (LowMemoryArray) results.get(a);
+			for (int j = 0; j < cresults.x; j++) {
+				for (int k = 0; k < y; k++) {
+					m.set( (cresults.y*a)+j,k,cresults.get(j,k));
+				}
+				i++;
+			}
+		}
+		standardOutput<-println("Returned matrix size:"+m.x+","+m.y);
+		return m;
+	}
+
+	// Goal is to receive the x, y, number of iterations (INFINITE is ok)
+	// and initial number of actors.
+	// Divide the work among the actors and produce the heat matrix
+	void act(String args[]) {
+		if(args.length != 7 && args.length != 5) {
+			System.err.println("Incorrect arguments.");
+			System.err.println("Usage:");
+			System.err.println("java heat.Heat [<theaters_file> <name_server>] <iterations> <x> <y> <number of actors> <filename>");
+			System.exit(0);
+		}
+
+		String[] theaters = null;
+		String name_server = null;
+		int i = 0;
+		if (args.length == 7) {
+			String theater_file = args[0];
+			try {
+				BufferedReader in = new BufferedReader(new FileReader(theater_file));
+				String line = in.readLine();
+				Vector theaters_vector = new Vector();
+				while (line != null) {
+					theaters_vector.add(line);
+					line = in.readLine();
+				}
+				theaters = new String[theaters_vector.size()];
+				for (int j = 0; j < theaters_vector.size(); j++) {
+					theaters[j] = "rmsp://" + (String)theaters_vector.get(j) + "/";
+				}
+			} catch (Exception e) {
+				System.err.println("Error reading theaters file: " + e);
+				e.printStackTrace();
+			}
+			name_server = args[1];
+			i = 2;
+		}
+
+		iterations = Integer.parseInt(args[i]);
+		i++;
+		x = Integer.parseInt(args[i]);
+		i++;
+		y = Integer.parseInt(args[i]);
+		i++;
+		number_actors = Integer.parseInt(args[i]);
+		i++;
+		filename = args[i];
+		x+=2; y+=2;
+
+		doWork(new Integer(iterations), theaters, name_server);
+
+		self<-keepAlive() : delay(new Integer(60000));
+	}
+	
+	public void keepAlive() {
+		System.out.println("Keep alive!");
+		self<-keepAlive() : delay(new Integer(60000));
+	}
+}
+

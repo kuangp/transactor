@@ -1,0 +1,196 @@
+module wwc.messaging;
+
+import salsa.language.Placeholder;
+import salsa.language.RunTime;
+import salsa.language.ServiceFactory;
+
+import salsa.naming.NamingService;
+
+import java.lang.reflect.Constructor;
+
+import salsa.resources.SystemService;
+
+import java.util.Hashtable;
+import java.util.Vector;
+
+import gc.*;
+
+import transactor.language.*;
+
+public behavior WWCSystem implements SystemService {
+	private NamingService namingService = ServiceFactory.getNaming();
+
+	public WWCSystem() {}
+
+		public void messageTargetNotFound(Message message) {
+			if (message.getTarget() instanceof ActorReference) {
+				ActorReference target = message.getTarget();
+				UAN uan = target.getUAN();
+				if (uan!=null) {
+					UAL ual = target.getUAL();
+					namingService.refreshReference(target);
+					UAL newUAL = target.getUAL();
+					if (newUAL!=null) {
+						target.send(message);
+						return;
+					}
+				}
+			}
+			System.err.println("Message sending error:");
+			System.err.println("\tMessage: "+message.toString());
+			System.err.println("\tException: Could not find the target actor.");
+			System.err.println("\t\tCould not find the UAL at the nameserver.");
+		}
+
+                public void messageTargetNotFound(SystemMessage message) {
+                                WeakReference target = message.getTarget();
+                                UAN uan = target.getUAN();
+                                if (uan!=null) {
+                                        UAL ual = target.getUAL();
+                                        namingService.refreshReference(target);
+                                        UAL newUAL = target.getUAL();
+                                        if (newUAL!=null) {
+                                                target.send(message);
+                                                return;
+                                        }
+                                }
+
+                        System.err.println("System Message sending error:");
+                        System.err.println("\tMessage: "+message.toString());
+                        System.err.println("\tException: Could not find the target actor.");
+                        System.err.println("\t\tCould not find the UAL at the nameserver.");
+                }
+
+
+                public void createActor(UAN uan, UAL ual, String className, Object sourceRef) {
+                  Constructor actorConstructor = null;
+                  try {
+                        Class[] parTypes = { Class.forName("salsa.naming.UAN"), Class.forName("salsa.naming.UAL"), Class.forName("java.lang.Object") };
+                        actorConstructor = Class.forName(className).getConstructor(parTypes);
+                        Object[] args = { uan, ual, sourceRef };
+                        actorConstructor.newInstance(args);
+                        if (uan!=null) {
+                          ServiceFactory.getTheater().registerSecurityEntry(uan.toString());
+                        }
+                  }
+                  catch (Exception e) {
+                        System.err.println("Remote Actor Creation Exception: ");
+                        System.err.println("\tError: "+e);
+                        e.printStackTrace();
+                  }
+                }
+
+                public void createActor(UAN uan, UAL ual, String className) {
+                  Constructor actorConstructor = null;
+                  try {
+                        Class[] parTypes = { Class.forName("salsa.naming.UAN"), Class.forName("salsa.naming.UAL"), Class.forName("java.lang.Object") };
+                        actorConstructor = Class.forName(className).getConstructor(parTypes);
+                        Object[] args = { uan, ual, null};
+                        actorConstructor.newInstance(args);
+                  }
+                  catch (Exception e) {
+                        System.err.println("Remote Actor Creation Exception: ");
+                        System.err.println("\tError: "+e);
+                        e.printStackTrace();
+                  }
+                }
+
+
+                /*public void addGCAgent(Actor actor) {
+                  //Actor previous = namingService.remove(actor.getUAN(), actor.getUAL());
+                  //if (previous instanceof Placeholder) {
+                  //  ((Placeholder)previous).sendAllMessages();
+                  //}
+
+                  namingService.setEntry(actor.getUAN(), actor.getUAL(), actor);
+                  namingService.update(actor.getUAN(), actor.getUAL());
+                  actor.start();
+                  RunTime.receivedUniversalActor();
+                }*/
+
+		public void removePlaceholder(UAN uan, UAL ual) {
+			Actor removed = namingService.remove(uan, ual);
+			if (removed instanceof Placeholder) {
+				((Placeholder)removed).sendAllMessages();
+			}
+                        RunTime.deletedUniversalActor();
+		}
+
+		public void addActor(byte[] actorBytes) {
+                  Actor actor;
+                  RunTime.createdUniversalActor();
+                  try {
+                    ByteArrayInputStream bis = new ByteArrayInputStream(actorBytes);
+                    ObjectInputStream inStream;
+
+                    inStream = new ObjectInputStream(bis);
+                    actor= ((Actor) inStream.readObject());
+                    inStream.close();
+                    bis.close();
+                  }
+                    catch (Exception e) {
+                      RunTime.deletedUniversalActor();
+                      System.err.println("WWCSystem Class, addActor() method:Error on deserializing an actor: " + e);
+			System.err.println ("Please make sure that the theater has the proper CLASSPATH set.");
+                      return;
+                    }
+
+                    Actor previous = namingService.remove(actor.getUAN(), actor.getUAL());
+                    if (previous instanceof Placeholder) {
+                      ((Placeholder)previous).sendAllMessages();
+                    }
+                    if (actor.getUAL()==null) {
+                      actor.setUAL(namingService.generateUAL());
+                    }
+
+                    namingService.setEntry(actor.getUAN(), actor.getUAL(), actor);
+                    namingService.update(actor.getUAN(), actor.getUAL());
+                    
+                    //update security info
+                    ServiceFactory.getTheater().registerSecurityEntry(actor.getUAN().toString());
+                    actor.start();
+                  }
+
+        public void reloadTransactor(byte[] actorBytes, Worldview new_wv, Vector new_mailbox, Hashtable new_pendingMessages, Vector new_unresolvedTokens, ActorMemory new_stateMemory) {
+                  Transactor.State actor;
+                  try {
+                    ByteArrayInputStream bis = new ByteArrayInputStream(actorBytes);
+                    ObjectInputStream inStream;
+
+                    inStream = new ObjectInputStream(bis);
+                    actor= ((Transactor.State) inStream.readObject());
+                    inStream.close();
+                    bis.close();
+                  }
+                    catch (Exception e) {
+                      RunTime.deletedUniversalActor();
+                      System.err.println("WWCSystem Class, reloadTransactor() method:Error on deserializing an actor: " + e);
+			          System.err.println ("Please make sure that the theater has the proper CLASSPATH set.");
+                      return;
+                    }
+
+                    actor.setWV(new_wv);
+                    actor.mailbox = new_mailbox;
+                    actor.pendingMessages = new_pendingMessages;
+                    actor.unresolvedTokens = new_unresolvedTokens;
+                    actor.setActorMemory(new_stateMemory);
+                    actor.getActorMemory().getInverseList().putInverseReference("rmsp://me");
+                    actor.getActorMemory().setPendingMessages(new_pendingMessages);
+
+                    Actor previous = namingService.remove(actor.getUAN(), actor.getUAL());
+                    if (previous instanceof Rollbackholder) {
+                      ((Rollbackholder)previous).sendAllMessages();
+                    }
+                    RunTime.deletedUniversalActor();
+
+                    namingService.setEntry(actor.getUAN(), actor.getUAL(), actor);
+                    if (actor.getUAN() != null) {
+                        namingService.update(actor.getUAN(), actor.getUAL());
+                        //update security info
+                        ServiceFactory.getTheater().registerSecurityEntry(actor.getUAN().toString());
+                    }
+
+                    actor.start();
+        }
+
+}

@@ -1,0 +1,62 @@
+module tests.distributed;
+
+import java.io.*;
+import java.util.*;
+
+behavior Chain {
+  boolean[] received;
+
+  transient String theatersFile="theaters.txt";
+  transient String nameServer="";  
+
+  public Chain(Integer size) {
+	received=new boolean[size.intValue()];
+  }
+
+  public void test() {
+    Chain testa=new Chain();
+    testa<-sendData()@self<-go()@standardOutput<-println(token);
+  }
+
+  public String go() {return "go";}
+
+  public String sendData() {
+    try{Thread.sleep(10000);} catch (Exception e) {}
+    return "sendData!";
+  }
+ 
+  void act(String args[]) {
+    try{
+	Chain[] actors=new Chain[Integer.parseInt(args[1])];
+	if (args.length>3) {theatersFile=args[3];}
+	nameServer=args[2];
+
+	// read available theaters
+	Vector theaters = new Vector();
+	String theater;
+	try {
+	  BufferedReader in = new BufferedReader(new FileReader(theatersFile));
+	  while ((theater = in.readLine())!= null){theaters.add(theater);}
+	  in.close(); 
+	} catch (IOException ioe){
+	  standardOutput<-println("[error] Can't open the file "+theatersFile+" for reading.");
+	}
+        Integer SIZE = new Integer(args[0]);   /*  <- N  */
+	for (int i=0;i<actors.length;i++) {
+	  actors[i]=new Chain(SIZE) at
+		(this.generateUAN(nameServer), 
+                 null
+                );
+	}
+	join{
+	  for (int i=0;i<actors.length;i++) {
+	  actors[i]<-migrate(theaters.get(i%theaters.size())) @ actors[i]<-test();
+	  }}@standardOutput<-println("Done!");
+    } catch (Exception e) {
+	System.err.println("USAGE:java tests.distributed.Chain <N> <# of actors> <name server> <theater file>");	
+    }
+    
+    
+  }
+
+}

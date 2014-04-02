@@ -1,0 +1,76 @@
+//The result must match the Fibonacci number
+
+module tests.localgc;
+
+behavior ChainFib {
+    
+    private int n;
+    private int targetN;
+    private String mark;
+    int currentSum=0;
+    ChainFib fp;
+    ChainFib fgp;
+    int times=2;
+    
+    ChainFib(String mark,int targetN,int n){
+	this.targetN=targetN;
+	this.n = n;
+	this.mark=mark;
+        currentSum=0;
+        fp=null;
+        fgp=null;
+	if (n>2) {times=2;} else {times=0;}
+    }
+
+    void addSum(Integer sum) {
+       if (times==0) {return;}
+	currentSum+=sum.intValue() ;
+        times--;
+        if (times==0) {
+          if (n==targetN) {standardOutput<-println(""+currentSum);}
+          else {
+	    if (fp!=null) {fp<-addSum(new Integer(currentSum));}
+	    if (fgp!=null) {fgp<-addSum(new Integer(currentSum));}	  
+          }
+        }
+    }
+
+    void compute(ChainFib _fp,ChainFib _fgp){
+	fp=_fp;
+        fgp=_fgp;
+	int port;	
+
+	if (n <= 0){
+	    if (fp!=null) {fp<-addSum(new Integer(0));fp<-addSum(new Integer(0));}
+	    if (fgp!=null) {fgp<-addSum(new Integer(0));}
+	} else if (n <= 2){
+	    if (fp!=null) {fp<-addSum(new Integer(1));}
+	    if (fgp!=null) {fgp<-addSum(new Integer(1));}
+            if (n==1) {fp<-addSum(new Integer(0));} 
+            else {fp<-addSum(new Integer(1));}
+	} else if (targetN>n){  
+		ChainFib fib1= new ChainFib(mark,targetN,n-1);
+		fib1<-compute(self,fp);
+	} else {
+	    ChainFib fib1= new ChainFib(mark,targetN,n-1); fib1<-compute(self,null);
+	}
+    }
+
+    int add(int numbers[]){
+	return numbers[0]+numbers[1];
+    }
+
+    void act(String args[]){
+	try {
+	  n = Integer.parseInt(args[0]);
+        targetN=n;
+    }
+    catch (Exception e) {standardError<-print("Parsing arguments error!\n");return;}
+
+        mark=""+System.currentTimeMillis();
+        if (targetN>2) {
+          compute(null,null);
+         } else if (targetN<=0) {standardOutput<-println(""+0);}
+         else {standardOutput<-println(""+1);}
+    }
+}

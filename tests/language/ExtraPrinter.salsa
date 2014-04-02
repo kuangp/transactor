@@ -1,0 +1,26 @@
+module tests.language;
+
+behavior ExtraPrinter extends TokenPrinter {
+
+    void act(String[] args){
+
+	/*  Things can get pretty nasty: */
+        int i = 0;  String s = "s";
+
+	print(1) @    // wrapped automatically into an Integer; will use print(int);
+	print(s) @    // will work fine
+	print ("a"+"b") @  // will work fine
+	print(new Integer(1)) @ // will work fine, but will use print(int);
+	print(new Integer(1+1)); // will work fine, but will use print(int);
+	    /* Not working yet:
+	print(Integer.parseInt("4")) @  // will work fine, must catch possible NFException
+        print(Integer.parseInt(args[0])) @ // ok if argument is correct; else Exception
+
+	print(i) @    // will fail because it's not wrapped as an Integer object
+	print(i+1) @  // will fail because it's not wrapped as an Integer object
+	print(1+1) @  // will fail because it's not wrapped as an Integer object
+        print(compute());  // must fail ::= print(VOID); 
+	    */
+    }
+
+}

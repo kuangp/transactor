@@ -1,0 +1,5 @@
+module examples.multicast;
+
+behavior AwareActor extends SimpleActor{
+    void ok(){}
+}

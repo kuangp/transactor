@@ -1,0 +1,80 @@
+
+module gctest.global;
+
+behavior FourHostQueens {
+    
+  int  SIZE, MASK, COUNT,TOTALACTOR;
+
+  public FourHostQueens(int size,int mask,int count) {
+    SIZE=size;MASK=mask;COUNT=count;
+  }
+
+  public int getCount() {return COUNT;}
+
+  public void add(int x) {COUNT+=x;TOTALACTOR--;if (TOTALACTOR==0) {self<-show(new Integer(COUNT));}}
+
+  public void show(Object data) {System.out.println(data);System.exit(0);}
+
+  void compute(Integer y, Integer left,Integer down,Integer right) {
+    this.Backtrack(y.intValue(),left.intValue(),down.intValue(),right.intValue());
+  }
+
+  void Backtrack(int y, int left, int down, int right)
+  {
+      int  bitmap, bit;
+
+      if (y == SIZE) {
+          COUNT++;
+      } else {
+          bitmap = MASK & ~(left | down | right);
+          while (bitmap>0) {
+              bit = -bitmap & bitmap;
+              bitmap ^= bit;
+              this.Backtrack(y+1, (left | bit)<<1, down | bit, (right | bit)>>1);
+          }
+      }
+  }
+
+	void act(String args[]) {
+        try{
+          SIZE = Integer.parseInt(args[0]);   /*  <- N  */
+          COUNT = 0;   /* result */
+          MASK = (1 << SIZE) - 1;
+          TOTALACTOR=0;
+	    if (SIZE<6) {self<-compute(0,0,0,0)@self<-getCount()@self<-show(token);}
+          else {
+		String[] hostArray=new String[4];
+		String nameServer=args[1];
+            for (int i=0;i<4;i++) {hostArray[i]=args[2+i];}
+
+
+    		int down=0,left=0,right=0;
+		int jdown=0,jleft=0,jright=0;
+    		int bitmap = (MASK & ~(left | down | right));
+    		while (bitmap>0) {
+		      int bit = -bitmap & bitmap;
+		      bitmap ^= bit;
+		      jdown=down | bit;
+		      jleft=(left | bit)<<1;
+		      jright=(right | bit)>>1;
+		      int jbitmap = MASK & ~(jleft | jdown | jright);
+		      while (jbitmap>0) {
+		          bit = -jbitmap & jbitmap;
+		          jbitmap ^= bit;
+			    TOTALACTOR++;
+			    FourHostQueens nq=new FourHostQueens(SIZE,MASK,0) at 
+                        (new UAN("uan://"+nameServer+"/FHQ/"+TOTALACTOR),
+                         new UAL("rmsp://"+hostArray[TOTALACTOR%4]+"/FHQ/"+TOTALACTOR)); 
+
+		          nq<-Backtrack(new Integer(2), new Integer((jleft | bit)<<1), 
+                         new Integer(jdown | bit), new Integer((jright | bit)>>1))@nq<-getCount()@add(token);
+		      }
+		}
+          }
+        } catch (Exception e) {
+System.err.println(e);
+System.err.println("USAGE:java -cp <lib> gctest.global.FourHostQueens  <num> <NameSvc> <host1> <host2> <host3> <host4>");}
+
+	}
+}
+

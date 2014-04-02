@@ -1,0 +1,38 @@
+module tests.distributed;
+
+behavior PingPongForAGC{
+  PingPongForAGC myActor;
+
+  void act(String[] args) {
+    try{
+      myActor=new PingPongForAGC() at (new UAN(args[0]),null);
+      myActor<-migrate(args[1])@
+      myActor<-startPingPong()@
+      myActor<-removeAcquaintance():delay(20000)@
+      standardOutput<-println("kindadone!");
+    } catch (Exception e) {standardOutput<-println("USAGE:java tests.distributed.PingPongForAGC <UAN> <target UAL>");}
+  }  
+
+  void startPingPong() {
+    PingPongForAGC[] pingpongActors=new PingPongForAGC[10];
+    for (int i=0;i<pingpongActors.length;i++)
+      pingpongActors[i]=new PingPongForAGC() at (new UAN("uan://match/pingpong_"+i),null);
+    myActor=pingpongActors[0];
+    join{
+    for (int i=0;i<pingpongActors.length;i++)
+      pingpongActors[i]<-setAcquaintance(pingpongActors[(i+1) % pingpongActors.length]);
+    }@ pingpongActors[0]<-pingpong();
+  }
+
+  void setAcquaintance(PingPongForAGC acquaintance){
+    myActor=acquaintance;
+  }
+
+  void removeAcquaintance(){
+    myActor=null;
+  }
+  
+
+  void pingpong() {myActor<-pingpong();} 
+
+}

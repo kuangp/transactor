@@ -1,0 +1,8 @@
+module tests.language;
+
+behavior DelayTest {
+  void act(String arguments[]){
+    standardOutput<-print("Hello"):delay(10000);
+    standardOutput<-println(" World!");
+  }
+}

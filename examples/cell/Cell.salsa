@@ -1,0 +1,20 @@
+module examples.cell;
+
+behavior Cell {
+
+  Object contents;
+
+  Cell(Object initialContents){
+      contents = initialContents;
+  }
+
+  Object get(){
+      standardOutput<-println("Returning cell value:"+contents);
+      return contents;
+  }
+
+  void set(Object newContents){
+      standardOutput<-println("Setting cell value to:"+newContents);
+      contents = newContents;
+  }
+}

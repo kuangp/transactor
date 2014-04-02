@@ -1,0 +1,63 @@
+module examples.heat_v2;
+
+public behavior Collector {
+
+	int number_workers = 0;
+
+	long[][] iteration_times;
+
+	public Collector(int number_workers, int total_iterations) {
+		this.number_workers = number_workers;
+		iteration_times = new long[total_iterations][number_workers];
+
+		lowest_iteration = total_iterations;
+	}
+
+	int lowest_iteration;
+
+	public void reportIterationTime(int worker_num, int iteration, long time) {
+		iteration_times[iteration-1][worker_num] = time;
+
+		System.err.print(iteration + " stored line: ");
+
+		for (int j = 0; j < number_workers; j++) {
+			System.err.print(iteration_times[iteration-1][j] + " ");
+		}
+		System.err.println();
+
+/*		if (iteration < lowest_iteration && (iteration%10) == 0) {
+			lowest_iteration = iteration;
+
+			double average = 0;
+			int count = 0;
+
+			if (iteration+9 < iteration_times.length) {
+				for (int i = iteration+9; i > iteration; i--) {
+					for (int j = 0; j < iteration_times[i].length; j++) {
+						average += iteration_times[i][j];
+						count++;
+					}
+				}
+			}
+			average /= count;
+
+			System.err.println(iteration + "... " + average);
+		}
+*/	}
+
+	public void printTimes() {
+		for (int i = iteration_times.length; i > 0; i--) {
+			double average = 0;
+			for (int j = 0; j < number_workers; j++) {
+				average += iteration_times[i-1][j];
+			}
+			average /= number_workers;
+
+			System.err.print((i-1) + " ");
+//			for (int j = 0; j < number_workers; j++) {
+//				System.err.print(iteration_times[i-1][j] + " ");
+//			}
+			System.err.println(average);
+		}
+	}
+}

@@ -1,0 +1,53 @@
+module examples.trap;
+import java.io.*;
+
+/* TrapWorker.salsa -- 
+ *   Worker for Parallel Trapezoidal Rule
+ */
+
+behavior TrapWorker{
+  Double trap(Double local_a ,Double local_b,Integer local_n ,Double h) {
+    //integral = (f(local_a) + f(local_b))/2.0;
+    token f_local_a = f(local_a);
+    token f_local_b = f(local_b);
+    token integral = startIntegral(f_local_a, f_local_b);
+    double x = local_a.doubleValue();
+
+    for (int i = 1; i <= local_n.intValue()-1; i++, x+=h.doubleValue()) {
+      //x = add(x,h);
+      token f_x = f(new Double(x));
+      integral = add(integral, f_x);     //x = x + h; integral = integral + f(x);
+    }
+
+    multiply(integral, h)@currentContinuation;
+}
+
+
+Double f(Double d) {           
+    double dv = d.doubleValue();
+     return new Double(5*dv*dv*dv*dv);
+}
+
+
+Double add(Double d, Double f){           
+    double dv = d.doubleValue();
+    double fv = f.doubleValue();
+    return new Double(dv+fv);
+} 
+
+ 
+
+Double multiply(Double d, Double f){
+    double dv = d.doubleValue();
+    double fv = f.doubleValue();
+    return new Double(dv*fv);
+}
+
+ 
+
+Double startIntegral(Double d, Double f){
+    return new Double((d.doubleValue()+f.doubleValue())/2.0);
+}
+
+}
+

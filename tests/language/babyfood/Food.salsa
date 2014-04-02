@@ -1,0 +1,7 @@
+module tests.language.babyfood;
+
+behavior Food {
+    String toString(){
+	return "Food";
+    }
+}

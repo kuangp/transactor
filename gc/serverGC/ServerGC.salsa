@@ -1,0 +1,270 @@
+module gc.serverGC;
+
+import java.util.Hashtable;
+import java.util.LinkedList;
+import java.util.Vector;
+import gc.SnapshotList;
+import gc.ActorSnapshot;
+import java.util.Enumeration ;
+import java.util.NoSuchElementException;
+
+behavior ServerGC implements ActorService{
+  Vector client;  //the GCAgent clients, represented by <host name>:<port number>
+  int GCSeconds=60;
+  //LinkedList BFSMemVector;
+  Vector victimList;
+  String myID="";
+
+  WeakReference myManager=null;
+
+  public ServerGC() {}
+
+          public void act(String args[]) {
+	    if (getUAN()!=null) {myID=this.getUAN().toString();}
+	    else {myID=this.getUAL().toString();}
+            UAL remoteUAL;
+            client=new Vector();
+            //BFSMemVector=new LinkedList();
+            //workingClient=new Vector();
+            victimList=new Vector();
+            try {
+              GCSeconds = Integer.parseInt(args[0]);
+            }
+            catch (Exception e) {
+              System.err.println(e);
+              System.err.println("Garbage Collection Server Failed!");
+              System.err.println("Usage:java -cp <required lib> gc.serverGC.ServerGC GC_Period_in_Secs <Manager> <host1> <host2> ...");
+              System.err.println("      where <host> has the format machineAddress:port, such as jenna.cs.rpi.edu:4444");
+              this.GCdie();
+	      System.exit(0);
+            }
+	    try {
+	     myManager=new WeakReference(self.getReferenceByName(args[1]));
+	    } catch (Exception e) {}
+
+            for (int i=2;i<args.length;i++) {
+              try {
+                if (args[i].length() > 0 &&
+                    args[i].charAt(args[i].length() - 1) == '/') {
+                  remoteUAL = new UAL("rmsp://" + args[i] + "salsa/GCAgent");
+                }
+                else {
+                  remoteUAL = new UAL("rmsp://" + args[i] + "/salsa/GCAgent");
+                }
+              }catch (Exception e) {
+                System.err.println(e);
+                continue;
+              }
+              WeakReference remoteSystem = new WeakReference( (UniversalActor)
+                  UniversalActor.getReferenceByLocation(remoteUAL));
+              client.addElement(remoteSystem);
+            }
+	    if (myManager==null) {
+	      self<-sleeping(new Boolean(true));
+            } else {
+	      myManager<-joinGC(new WeakReference(self))@self<-sleeping(new Boolean(true));;
+            }
+          }
+
+
+long executionTime = System.currentTimeMillis();
+  public void sleeping(Boolean firstPass) {
+System.out.println("sleeping");
+    boolean firstPassBool=firstPass.booleanValue();
+    if (GCSeconds>=0||firstPassBool) {
+      if (mylock==0) {
+        for (int i=0;i<tempClient.size();i++) {
+	  client.addElement(tempClient.get(i));
+        }
+      }
+long tempTime=System.currentTimeMillis();
+System.out.println(tempTime-executionTime);
+executionTime=tempTime;
+      tempClient.clear();
+      try{Thread.sleep(GCSeconds*1000);} catch (Exception e) {}
+      if (client.size()>0) {
+        requestSnapShot(myID)
+        @requestVirtualMigration(token);
+        //@mergeDataReturnSnapshot(token)
+        //@sleeping(new Boolean(false))
+        ;
+      } else {sleeping(new Boolean(false));}
+    }
+  }
+
+int mylock=0;
+  public void requestSnapShot(String myid) {
+mylock++;
+System.out.println("requestSnapshot,mylock="+mylock);
+     join {
+	      for (int i=0;i<client.size();i++) {
+                WeakReference remoteSystem=(WeakReference)client.get(i);
+                remoteSystem<-requestSnapShot(myID);
+              }
+      }@ returnRef(myID)@currentContinuation;
+  }
+
+  public String returnRef(String ref) {return ref;}
+
+  public SnapshotList[] requestVirtualMigration(String name) {
+System.out.println("reqVirMig");
+    if (true) {
+      join {
+        for (int i=0;i<client.size();i++) {
+          WeakReference clientRef=(WeakReference) client.get(i);
+          clientRef<-requestVirtualMigration(myID);
+        }
+      }@mergeDataReturnSnapshot(token);
+    }
+    return null;
+  }
+
+
+	Vector tempClient=new Vector();
+	public void joinGC(WeakReference myClient) {
+System.out.println("join clinet:"+myClient);
+	  tempClient.addElement(myClient);
+	}
+
+	public void leaveGC(ActorReference myClient) {
+
+	}
+
+	public void terminate() {
+	  if (myManager!=null) {myManager<-leaveGC();}
+	  GCSeconds=-1;
+	}
+
+
+	public SnapshotList[] mergeDataReturnSnapshot(Object[] snapshots) {
+mylock--;
+System.out.println("mergDaReSnapshot,mylock="+mylock);
+
+	  SnapshotList[] snapshotList;
+	  if (snapshots.length<=0) {return null;}
+	  Vector snapshotVector=new Vector();
+	  for (int i=0;i<snapshots.length;i++) {
+	    if (snapshots[i]==null) {continue;}
+	    if (snapshots[i] instanceof SnapshotList) {
+	      snapshotVector.addElement(snapshots[i]);
+	    } else {
+	      try {
+		Object[] obj=(Object[])snapshots[i];
+		for (int j=0;j<obj.length;j++) {
+		  if (obj[j]==null) {continue;}
+		  snapshotVector.addElement(obj[j]);
+		}
+	      }catch (Exception e) {System.out.println("??????:"+snapshots[i]);}
+	      
+	    }
+ 	  } 
+	  if (snapshotVector.size()==0) {return null;}
+	  snapshotList=new SnapshotList[snapshotVector.size()];
+	  for (int i=0;i<snapshotList.length;i++) {
+	    snapshotList[i]=(SnapshotList)snapshotVector.get(i);
+ 	  }
+	  LinkedList roots=this.identifyUnblockedRoot(snapshotList);
+          this.snapshotMark(ActorSnapshot.UNBLOCKED,snapshotList,roots);
+          roots=this.identifyGlobalRoot(snapshotList);
+          this.snapshotMark(ActorSnapshot.NONLOCAL,snapshotList,roots);
+	  this.sendKilling(snapshotList);
+	  return snapshotList;
+	}
+
+  private ActorSnapshot getActor(String name,SnapshotList[] snapshotList) {
+    for (int i=0;i<snapshotList.length;i++) {
+      ActorSnapshot ret=snapshotList[i].get(name);
+      if (ret!=null) {return ret;}
+    }
+    return null;
+  }
+
+  private LinkedList identifyGlobalRoot(SnapshotList[] snapshotList) {
+    LinkedList BFSMemVector=new LinkedList();
+    for (int j=0;j<snapshotList.length;j++) {
+      SnapshotList snapshotTable=snapshotList[j];
+      for (Enumeration e = snapshotTable.elements();  e.hasMoreElements(); ) {
+        ActorSnapshot actor=(ActorSnapshot)e.nextElement();
+        if (actor.iList==null) {continue;}
+        for (int i=0;i<actor.iList.length;i++) {
+          if (actor.isNotMarked()&& getActor((String)actor.iList[i],snapshotList)==null) {
+            actor.markColor(ActorSnapshot.NONLOCAL);
+            BFSMemVector.addLast(actor);
+            break;
+          }
+        }
+      }
+    }
+    return BFSMemVector;	  
+  }
+
+  private LinkedList identifyUnblockedRoot(SnapshotList[] snapshotList) {
+    LinkedList BFSMemVector=new LinkedList();
+    for (int i=0;i<snapshotList.length;i++) {
+      SnapshotList snapshotTable=snapshotList[i];
+      for (Enumeration e = snapshotTable.elements();  e.hasMoreElements(); ) {
+        ActorSnapshot actor=(ActorSnapshot)e.nextElement();
+	if (actor.isUnblocked()) {BFSMemVector.addLast(actor);}
+	else if (actor.isNonlocal()) {actor.markColor(ActorSnapshot.NOTMARKED);}
+      }
+    }
+    return BFSMemVector;	  
+  }
+
+
+  //color could be ActorSnapshot.NONLOCAL or ActorSnapshot.UNBLOCKED
+  public int snapshotMark(int color,SnapshotList[] snapshotList,LinkedList BFSMemVector) {
+    ActorSnapshot currentSnapshot;
+    int ret=0;
+    for (;;) {
+      try {currentSnapshot = (ActorSnapshot) BFSMemVector.removeFirst();}
+      catch (NoSuchElementException e) {break;}
+
+      Object[] flist=currentSnapshot.fList;
+      if (flist==null || flist.length==0) {continue;}
+      for (int i=0;i< flist.length;i++) {
+
+        Object nextActorObj=getActor((String)flist[i],snapshotList);
+        if (nextActorObj!=null) {
+          ActorSnapshot nextActor = (ActorSnapshot) nextActorObj;
+          if (!nextActor.isNotMarked()) {
+            continue;
+          } else {
+            nextActor.markColor(color);
+            BFSMemVector.addLast(nextActor);
+            ret++;
+          }
+        }
+      }
+    }
+    BFSMemVector.clear();
+    return ret;
+  }
+
+  private void sendKilling(SnapshotList[] snapshotList) {
+System.out.println("killing");
+    int throughPut=0;
+    Vector killing=new Vector();
+    join{
+    for (int j=0;j<snapshotList.length;j++) {
+      SnapshotList snapshotTable=snapshotList[j];
+      for (Enumeration e = snapshotTable.elements();  e.hasMoreElements(); ) {
+        ActorSnapshot actor=(ActorSnapshot) e.nextElement();
+        if (actor.isNotMarked()) {
+          killing.addElement(actor.name); 
+	  throughPut++;
+          snapshotTable.remove(actor.name);
+        } else if (actor.isUnblocked()) {snapshotTable.remove(actor.name);}
+      }
+      WeakReference client=new WeakReference(null,new UAL(snapshotTable.getID()+"salsa/GCAgent"));
+      if(killing.size()>0) {
+        client<-requestKilling(myID,killing);
+        killing.clear();
+      }
+    }
+    System.out.println("total throughput="+throughPut);
+    }@sleeping(new Boolean(false));
+  }
+
+
+}

@@ -1,0 +1,716 @@
+/*
+	Salsa Grammar, v0.3
+	
+	Authors: Carlos Varela, Travis Desell
+	
+	Main Changes in version 0.3 include:
+	
+		-support for named tokens:
+			a<-m1() -> token x;
+			b<-m2(x);
+			c<-m3(x);
+
+		-support for sequential tokens:
+			a<-m1() -> token x;
+			for (int i = 0; i < 10; i++) b<-m2(x) -> next x;
+
+		-join continuations have become join blocks:
+			join {
+				a<-m1() @ b<-m2();
+				c<-m3();
+			} @ d<-m4(token);
+
+		-tokens must be explicitly defined as arguments, 
+		 ie the following is no longer valid code:
+			a<-m1() @ b<-m2;
+ */
+
+options {
+	JAVA_UNICODE_ESCAPE = true;
+	NODE_SCOPE_HOOK = true;
+	NODE_FACTORY = true;
+	NODE_PACKAGE = "salsac";
+}
+
+PARSER_BEGIN(SalsaParser)
+	package salsac;
+
+	import salsac.definitions.*;
+
+	public class SalsaParser {
+
+		public static void main(String args[]) {
+			SalsaParser parser;
+
+			if (args.length == 0) {
+				System.out.println("Salsa Parser Version " + SalsaCompiler.VERSION + ":  Reading from standard input . . .");
+
+				parser = new SalsaParser(System.in);
+			} else if (args.length == 1) {
+				System.out.println("Salsa Parser Version " + SalsaCompiler.VERSION + ":  Reading from file " + args[0] + " . . .");
+
+				try {
+					parser = new SalsaParser(new java.io.FileInputStream(args[0]));
+				} catch (java.io.FileNotFoundException e) {
+					System.out.println("Salsa Parser Version " + SalsaCompiler.VERSION + ":  File " + args[0] + " not found.");
+					return;
+				}
+			} else {
+				System.out.println("Salsa Parser Version " + SalsaCompiler.VERSION + ":  Usage is one of:");
+				System.out.println("         java SalsaParser < inputfile");
+				System.out.println("OR");
+				System.out.println("         java SalsaParser inputfile");
+				return;
+			}
+
+			try {
+				SimpleNode n = parser.CompilationUnit();
+				n.dump("");
+				
+				System.out.println("Salsa Parser Version " + SalsaCompiler.VERSION + ":  Salsa program parsed successfully.");
+			} catch (ParseException e) {
+				System.out.println(e.getMessage());
+				System.out.println("Salsa Parser Version " + SalsaCompiler.VERSION + ":  Encountered errors during parse.");
+			}
+		}
+	/* must add the following line to the method jj_consume_token before the return statement
+		nodeTable.current.addToken(token);
+	*/
+                                
+        static NodeTable nodeTable = new NodeTable(); 
+                                
+        static void jjtreeOpenNodeScope(Node n) {
+                nodeTable = new NodeTable(nodeTable);
+                nodeTable.current = (SimpleNode)n;
+        }
+                                        
+        static void jjtreeCloseNodeScope(Node n) {
+                nodeTable = nodeTable.parent;
+        }
+}
+
+PARSER_END(SalsaParser)
+
+
+/* WHITE SPACE */
+
+SKIP : {
+	" " | "\t" | "\n" | "\r" | "\f"
+}
+
+/* COMMENTS */
+
+MORE : {
+	  "//" : IN_SINGLE_LINE_COMMENT
+	| <"/**" ~["/"]> { input_stream.backup(1); } : IN_FORMAL_COMMENT
+	| "/*" : IN_MULTI_LINE_COMMENT
+}
+
+<IN_SINGLE_LINE_COMMENT> SPECIAL_TOKEN : {
+  <SINGLE_LINE_COMMENT: "\n" | "\r" | "\r\n" > : DEFAULT
+}
+
+<IN_FORMAL_COMMENT> SPECIAL_TOKEN : {
+  <FORMAL_COMMENT: "*/" > : DEFAULT
+}
+
+<IN_MULTI_LINE_COMMENT> SPECIAL_TOKEN : {
+  <MULTI_LINE_COMMENT: "*/" > : DEFAULT
+}
+
+<IN_SINGLE_LINE_COMMENT,IN_FORMAL_COMMENT,IN_MULTI_LINE_COMMENT> MORE : {
+  < ~[] >
+}
+
+/* RESERVED WORDS AND LITERALS */
+
+TOKEN : {
+	  < ABSTRACT: "abstract" >
+	| < AT: "at" >
+	| < BEHAVIOR: "behavior" >
+	| < BOOLEAN: "boolean" >
+	| < BREAK: "break" >
+	| < BYTE: "byte" >
+	| < CASE: "case" >
+	| < CATCH: "catch" >
+	| < CHAR: "char" >
+	| < CONST: "const" >
+	| < CONTINUE: "continue" >
+	| < CURRENTCONTINUATION: "currentContinuation" >
+	| < _DEFAULT: "default" >
+	| < DO: "do" >
+	| < DOUBLE: "double" >
+	| < ELSE: "else" >
+	| < EXTENDS: "extends" >
+	| < FALSE: "false" >
+	| < FINAL: "final" >
+	| < FINALLY: "finally" >
+	| < FLOAT: "float" >
+	| < FOR: "for" >
+	| < GOTO: "goto" >
+	| < IF: "if" >
+	| < IMPLEMENTS: "implements" >
+	| < IMPORT: "import" >
+	| < INSTANCEOF: "instanceof" >
+	| < INT: "int" >
+	| < INTERFACE: "interface" >
+	| < JOIN: "join" >
+	| < LONG: "long" >
+	| < MODULE: "module">
+	| < NATIVE: "native" >
+	| < NEW: "new" >
+	| < NULL: "null" >
+	| < PRIVATE: "private" >
+	| < PROTECTED: "protected" >
+	| < PUBLIC: "public" >
+	| < RETURN: "return" >
+	| < SHORT: "short" >
+	| < STATIC: "static" >
+	| < SUPER: "super" >
+	| < SWITCH: "switch" >
+	| < SYNCHRONIZED: "synchronized" >
+	| < THIS: "this" >
+	| < THROW: "throw" >
+	| < THROWS: "throws" >
+	| < _TOKEN: "token" >
+	| < TRANSIENT: "transient" >
+	| < TRUE: "true" >
+	| < TRY: "try" >
+	| < VOID: "void" >
+	| < VOLATILE: "volatile" >
+	| < WHILE: "while" >
+}
+
+/* LITERALS */
+
+TOKEN : {
+	  < INTEGER_LITERAL:
+		  <DECIMAL_LITERAL> (["l","L"])?
+		| <HEX_LITERAL> (["l","L"])?
+		| <OCTAL_LITERAL> (["l","L"])?
+	  >
+	| < #DECIMAL_LITERAL: ["1"-"9"] (["0"-"9"])* >
+	| < #HEX_LITERAL: "0" ["x","X"] (["0"-"9","a"-"f","A"-"F"])+ >
+	| < #OCTAL_LITERAL: "0" (["0"-"7"])* >
+	| < FLOATING_POINT_LITERAL:
+		  (["0"-"9"])+ "." (["0"-"9"])* (<EXPONENT>)? (["f","F","d","D"])?
+		| "." (["0"-"9"])+ (<EXPONENT>)? (["f","F","d","D"])?
+		| (["0"-"9"])+ <EXPONENT> (["f","F","d","D"])?
+		| (["0"-"9"])+ (<EXPONENT>)? ["f","F","d","D"]
+	  >
+	| < #EXPONENT: ["e","E"] (["+","-"])? (["0"-"9"])+ >
+	| < CHARACTER_LITERAL:
+		"'"
+		(   (~["'","\\","\n","\r"])
+			| ("\\"
+				( ["n","t","b","r","f","\\","'","\""]
+				| ["0"-"7"] ( ["0"-"7"] )?
+            	| ["0"-"3"] ["0"-"7"] ["0"-"7"]
+			    )
+			  )
+		)
+		"'"
+	  >
+	| < STRING_LITERAL:
+		"\""
+		(   (~["\"","\\","\n","\r"])
+			| ("\\"
+				( ["n","t","b","r","f","\\","'","\""]
+				| ["0"-"7"] ( ["0"-"7"] )?
+				| ["0"-"3"] ["0"-"7"] ["0"-"7"]
+				)
+			  )
+		)*
+		"\""
+	  >
+}
+
+/* IDENTIFIERS */
+
+TOKEN : {
+	  < IDENTIFIER: <LETTER> (<LETTER>|<DIGIT>)* >
+	| < #LETTER:
+		[
+			"\u0024",
+			"\u0041"-"\u005a",
+			"\u005f",
+			"\u0061"-"\u007a",
+			"\u00c0"-"\u00d6",
+			"\u00d8"-"\u00f6",
+			"\u00f8"-"\u00ff",
+			"\u0100"-"\u1fff",
+			"\u3040"-"\u318f",
+			"\u3300"-"\u337f",
+			"\u3400"-"\u3d2d",
+			"\u4e00"-"\u9fff",
+			"\uf900"-"\ufaff"
+		]
+	  >
+	| < #DIGIT:
+		[
+			"\u0030"-"\u0039",
+			"\u0660"-"\u0669",
+			"\u06f0"-"\u06f9",
+			"\u0966"-"\u096f",
+			"\u09e6"-"\u09ef",
+			"\u0a66"-"\u0a6f",
+			"\u0ae6"-"\u0aef",
+			"\u0b66"-"\u0b6f",
+			"\u0be7"-"\u0bef",
+			"\u0c66"-"\u0c6f",
+			"\u0ce6"-"\u0cef",
+			"\u0d66"-"\u0d6f",
+			"\u0e50"-"\u0e59",
+			"\u0ed0"-"\u0ed9",
+			"\u1040"-"\u1049"
+		]
+	  >
+}
+
+/* SEPARATORS */
+
+TOKEN : {
+	  < LPAREN: "(" >
+	| < RPAREN: ")" >
+	| < LBRACE: "{" >
+	| < RBRACE: "}" >
+	| < LBRACKET: "[" >
+	| < RBRACKET: "]" >
+	| < SEMICOLON: ";" >
+	| < COMMA: "," >
+	| < DOT: "." >
+	| < MSG: "<-" >
+	| < CONT: "@" >
+	| < TOKENNAMING: "->" >
+}
+
+/* OPERATORS */
+
+TOKEN : {
+	  < ASSIGN: "=" >
+	| < GT: ">" >
+	| < LT: "<" >
+	| < BANG: "!" >
+	| < TILDE: "~" >
+	| < HOOK: "?" >
+	| < COLON: ":" >
+	| < EQ: "==" >
+	| < LE: "<=" >
+	| < GE: ">=" >
+	| < NE: "!=" >
+	| < SC_OR: "||" >
+	| < SC_AND: "&&" >
+	| < INCR: "++" >
+	| < DECR: "--" >
+	| < PLUS: "+" >
+	| < MINUS: "-" >
+	| < STAR: "*" >
+	| < SLASH: "/" >
+	| < BIT_AND: "&" >
+	| < BIT_OR: "|" >
+	| < XOR: "^" >
+	| < REM: "%" >
+	| < LSHIFT: "<<" >
+	| < RSIGNEDSHIFT: ">>" >
+	| < RUNSIGNEDSHIFT: ">>>" >
+	| < PLUSASSIGN: "+=" >
+	| < MINUSASSIGN: "-=" >
+	| < STARASSIGN: "*=" >
+	| < SLASHASSIGN: "/=" >
+	| < ANDASSIGN: "&=" >
+	| < ORASSIGN: "|=" >
+	| < XORASSIGN: "^=" >
+	| < REMASSIGN: "%=" >
+	| < LSHIFTASSIGN: "<<=" >
+	| < RSIGNEDSHIFTASSIGN: ">>=" >
+	| < RUNSIGNEDSHIFTASSIGN: ">>>=" >
+}
+
+
+/******************************************
+ * THE SALSA LANGUAGE GRAMMAR STARTS HERE *
+ ******************************************/
+
+/*
+ * Program structuring syntax follows.
+ */
+ 
+CompilationUnit CompilationUnit() : {} {
+	[ModuleDeclaration()]
+	(ImportDeclaration())* 
+	BehaviorDeclarationAttributes()
+	(LOOKAHEAD(1) BehaviorDeclaration() | InterfaceDeclaration() )
+	<EOF>
+	
+	{ return (CompilationUnit) jjtThis; }
+}
+
+void Name() : {} {
+	<IDENTIFIER> (LOOKAHEAD(2) "." <IDENTIFIER>)*
+}
+ 
+void ModuleDeclaration() : {} {
+	"module" Name() ";"
+}
+
+void ImportDeclaration() : {} {
+	"import" <IDENTIFIER> (LOOKAHEAD(2) "." (<IDENTIFIER> | "*") )* ";"
+}
+ 
+ 
+void BehaviorDeclarationAttributes() : {} {
+	("abstract" | "public" | "final")*
+}
+ 
+void InterfaceDeclaration() : {} {
+	"interface" <IDENTIFIER> ["extends" Name()] InterfaceBody()
+}
+
+void InterfaceBody() : {} {
+	(
+	"{"
+		( LOOKAHEAD( StateVariableDeclaration() ) StateVariableDeclaration() 
+	 	  | MethodLookahead() ";" )*
+	"}"
+	)*
+}
+
+void BehaviorDeclaration() : {} {
+	"behavior" <IDENTIFIER> ["extends" Name()] ["implements" Name() ("," Name())*] BehaviorBody()
+}
+
+void MethodLookahead() : {} {
+	MethodAttributes() ( Type() | "void" ) <IDENTIFIER> FormalParameters() ["throws" Exceptions()]
+}
+
+void ConstructorLookahead() : {} {
+	MethodAttributes() <IDENTIFIER> FormalParameters() ["throws" Exceptions()] "{"
+}
+
+void BehaviorBody() : {} {
+	"{" 
+		(   LOOKAHEAD(2) Initializer() 
+		  | LOOKAHEAD(3) NestedBehaviorDeclaration() 
+		  | LOOKAHEAD( StateVariableDeclaration() ) StateVariableDeclaration() 
+		  | LOOKAHEAD( MethodLookahead() ) MethodDeclaration()
+		  | LOOKAHEAD( ConstructorLookahead() ) ConstructorDeclaration() 
+		)* 
+	"}"
+}
+ 
+void NestedBehaviorAttributes() : {} {
+	("abstract" | "public" | "final" | "protected" | "private" | "static")*
+}
+
+
+void NestedBehaviorDeclaration() : {} {
+	NestedBehaviorAttributes() BehaviorDeclaration()
+}
+ 
+
+void Initializer() : {} {
+	["static"] Block()
+}
+ 
+
+void StateVariableAttributes() : {} {
+	("public" | "protected" | "private" | "volatile" | "static" | "final" | "transient")*
+}
+
+void StateVariableDeclaration() : {} {
+	StateVariableAttributes() Type() VariableDeclaration() ("," VariableDeclaration())* ";"
+}
+
+void PrimitiveType() : {} {
+	"boolean" | "char" | "byte" | "short" | "int" | "long" | "float" | "double"
+}
+
+
+void Type() : {} {
+	(PrimitiveType() | Name()) ( "[" "]" )*
+}
+
+
+void VariableDeclaration() : {} {
+	<IDENTIFIER> ("[" "]")* ["=" (Expression() | ArrayInitializer())]
+}
+
+void ArrayInitializer() : {} {
+	"{" [(Expression() | ArrayInitializer()) ("," (Expression() | ArrayInitializer()))*] "}"
+}
+
+void AssignmentOperator() : {} {
+	"=" | "*=" | "/=" | "%=" | "+=" | "-=" | "<<=" | ">>=" | ">>>=" | "&=" | "^=" | "|="
+}
+
+void Expression() : {} {
+	Value() (((Operator() | AssignmentOperator()) Value()) | ("?" Expression() ":" Value()) )*
+}
+
+void Operator() : {} {
+	"||" | "&&" | "|" | "^" | "&" | "==" | "!=" | ">" | "<" | "<=" | ">=" | "<<" | ">>" | ">>>" | "+" | "-" | "*" | "/" | "%" | "instanceof"
+}
+
+void Value() : {} {
+	[Prefix()] Variable() [Suffix()] (PrimarySuffix())*
+}
+
+void Prefix() : {} {
+	"++" | "--" | "~" | "!" | "-"
+}
+
+void Suffix() : {} {
+	"++" | "--"
+}
+
+void Variable() : {} {
+	[LOOKAHEAD( "(" Type() ")" (Literal() | Name() | "this" | "super" | AllocationExpression() | "(" Expression() ")")) "(" Type() ")"] 
+	(
+		  Literal()
+		| Name() 
+		| "this" 
+		| "super"
+		| AllocationExpression()
+		| "(" Expression() ")"
+	)
+}
+
+void PrimarySuffix() : {} {
+	  LOOKAHEAD(2) "." "this"
+	| LOOKAHEAD(2) "." AllocationExpression()
+	| "[" Expression() "]"
+	| LOOKAHEAD(2) "." <IDENTIFIER>
+	| Arguments()
+}
+
+void ResultType() : {} {
+	Type() | "void"	
+}
+
+void Literal() : {} {
+	  LOOKAHEAD( IntegerLiteral() ) 	IntegerLiteral()
+	| LOOKAHEAD( FloatingPointLiteral() )	FloatingPointLiteral()
+	| LOOKAHEAD( CharacterLiteral() )	CharacterLiteral()
+	| LOOKAHEAD( StringLiteral() )		StringLiteral()
+	| LOOKAHEAD( BooleanLiteral() )		BooleanLiteral()
+	| LOOKAHEAD( NullLiteral() )		NullLiteral()
+	| TokenLiteral()
+}
+
+void IntegerLiteral() : {} {
+	<INTEGER_LITERAL>
+}
+
+
+void FloatingPointLiteral() : {} {
+	<FLOATING_POINT_LITERAL>
+}
+
+void CharacterLiteral() : {} {
+	<CHARACTER_LITERAL>
+}
+
+void StringLiteral() : {} {
+	<STRING_LITERAL>
+}
+
+void BooleanLiteral() : {} {
+	"true" | "false"
+}
+
+void NullLiteral() : {} {
+	"null"
+}
+
+void TokenLiteral() : {} { 
+	"token"
+}
+
+void Arguments() : {} {
+	"(" [Expression() ("," Expression())*] ")"
+}
+
+void AllocationExpression() : {} {
+	  LOOKAHEAD(2) "new" PrimitiveType() ArrayDimsAndInits()
+	| "new" Name() (ArrayDimsAndInits() | (Arguments() [BehaviorBody()])) [BindDeclaration()]
+}
+
+void BindDeclaration() : {} {
+	"at" "(" Expression() ["," Expression()] ")"
+}
+
+void ArrayDimsAndInits() : {} {
+	  LOOKAHEAD(2) (LOOKAHEAD(3) "[" Expression() "]")+ (LOOKAHEAD(2) "[" "]")*
+	| ("[" "]")+ ArrayInitializer()
+}
+
+void FormalParameters() : {} {
+	"(" [ ["final"] Type() <IDENTIFIER> ( "[" "]" )* ( "," ["final"] Type() <IDENTIFIER> ( "[" "]" )* )* ] ")"
+}
+
+void ExplicitConstructorInvocation() : {} {
+	"super" Arguments() ";"
+}
+
+void ConstructorDeclaration() : {} {
+	MethodAttributes() <IDENTIFIER> FormalParameters() ["throws" Exceptions()] "{" 
+		[LOOKAHEAD( ExplicitConstructorInvocation() ) ExplicitConstructorInvocation()] ( Statement() )* 
+	"}"
+}
+
+void ConstructorAttributes() : {} {
+	("public" | "protected" | "private")*
+}
+
+void MethodDeclaration() : {} {
+	MethodAttributes() (Type() | "void") <IDENTIFIER> FormalParameters() ["throws" Exceptions()] Block()
+}
+
+void MethodAttributes() : {} {
+	("public" | "protected" | "private" | "static" | "abstract" | "final" | "native" )*
+}
+
+void Exceptions() : {} {
+	Name() ("," Name())*
+}
+
+void Statement() : {} {
+	  LOOKAHEAD( ContinuationStatement() ) ContinuationStatement()
+	| LOOKAHEAD( TokenDeclarationStatement() ) TokenDeclarationStatement()
+	| LOOKAHEAD( ["final"] Type() <IDENTIFIER> ) LocalVariableDeclaration() ";"
+	| Block()
+	| EmptyStatement()
+	| LOOKAHEAD(3) StatementExpression() ";"
+	| LOOKAHEAD(2) LabeledStatement()
+	| LOOKAHEAD(2) SynchronizedStatement()
+	| SwitchStatement()
+	| IfStatement()
+	| WhileStatement()
+	| DoStatement()
+	| ForStatement()
+	| BreakStatement()
+	| ContinueStatement()
+	| ReturnStatement()
+	| ThrowStatement()
+	| TryStatement()
+	| LOOKAHEAD(MethodLookahead()) MethodDeclaration()
+	| NestedBehaviorDeclaration()
+}
+
+void Block() : {} {
+	"{" ( Statement() )* "}"
+}
+
+void LocalVariableDeclaration() : {} {
+	["final"] Type() VariableDeclaration() ("," VariableDeclaration())*
+}
+
+void EmptyStatement() : {} {
+	";"
+}
+
+void StatementExpression() : {} {
+	Value() [AssignmentOperator() Expression()]
+}
+
+void LabeledStatement() : {} {
+	<IDENTIFIER> ":" Statement()
+}
+
+void SwitchStatement() : {} {
+	"switch" "(" Expression() ")" "{" (SwitchLabel() (Statement())* )* "}"
+}
+
+void SwitchLabel() : {} {
+	  "case" Expression() ":"
+	| "default" ":"
+}
+
+void IfStatement() : {} {
+	"if" "(" Expression() ")" Statement() [LOOKAHEAD(1) "else" Statement()]
+}
+
+void WhileStatement() : {} {
+	"while" "(" Expression() ")" Statement()
+}
+
+void DoStatement() : {} {
+	"do" Statement() "while" "(" Expression() ")" ";"
+}
+
+
+void ForInit() : {} {
+	[LOOKAHEAD( ["final"] Type() <IDENTIFIER>) LocalVariableDeclaration() | (StatementExpression() ("," StatementExpression())*)]
+}
+
+void ForCondition() : {} {
+	[Expression()]
+}
+
+void ForIncrement() : {} {
+	[StatementExpression() ("," StatementExpression())*]
+}
+
+void ForStatement() : {} {
+	"for" "(" ForInit() ";" ForCondition() ";" ForIncrement() ")" Statement()
+}
+
+void BreakStatement() : {} {
+	"break" [<IDENTIFIER>] ";"
+}
+
+void ContinueStatement() : {} {
+	"continue" [<IDENTIFIER>] ";"
+}
+
+void ReturnStatement() : {} {
+	"return" [Expression()] ";"
+}
+
+void ThrowStatement() : {} {
+	"throw" Expression() ";"
+}
+	
+void SynchronizedStatement() : {} {
+	"synchronized" "(" Expression() ")" Block()
+}
+
+void TryStatement() : {} {
+	"try" Block() ("catch" "(" ["final"] Type() <IDENTIFIER> ")" Block())*  ["finally" Block()]
+}
+
+
+
+
+void ContinuationStatement() : {} {
+	(LOOKAHEAD(MessageStatement() "@") MessageStatement() "@")*
+	(MessageStatement() | "currentContinuation") ";"
+}
+
+void MessageStatement() : {} {
+	[LOOKAHEAD(NamedTokenStatement()) NamedTokenStatement()] ( MessageSend() | JoinBlock() )
+}
+
+void JoinBlock() : {} {
+	"join" Block()
+}
+
+void NamedTokenStatement() : {} {
+	(<IDENTIFIER> | "token" <IDENTIFIER>) "="
+}
+
+void MessageSend() : {} {
+	[LOOKAHEAD( Value() "<-" ) Value() "<-"] <IDENTIFIER> MessageArguments() [":" MessageProperty()]
+}
+
+void MessageProperty() : {} {
+	<IDENTIFIER> [Arguments()]
+}
+
+void MessageArguments() : {} {
+	"(" [Expression() ("," Expression())*] ")"
+}
+
+void TokenDeclarationStatement() : {} {
+	"token" <IDENTIFIER> "=" Expression() ";"
+}

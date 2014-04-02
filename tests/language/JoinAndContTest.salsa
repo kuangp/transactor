@@ -1,0 +1,181 @@
+module tests.language;
+
+behavior JoinAndContTest{
+
+  void act(String[] args) {
+    int testcode=Integer.parseInt(args[0]);
+
+    //test continuations
+    if (testcode==0) {
+      returnStr("Test ")@standardOutput<-println(token)@
+      returnStr("Continuations")@ standardOutput<-println(token);
+    }
+
+
+    //test the empty join block
+    if (testcode==1) {
+    join {
+     if(false) {
+      standardOutput<-println("Wrong ");
+     }
+    }@standardOutput<-println("passed empty join");
+    }
+
+    if (testcode==2) {
+    //test non-empty join block with return values
+    join {
+     for (int i=0;i<10;i++) {
+      dummy();
+     }
+    }@mergeDummy(token)
+     @standardOutput<-println("passed non-empty join block with return values");    
+    }
+
+    if (testcode==3) {
+    //test empty join block with return values
+    join {
+     for (int i=0;i<0;i++) {
+      dummy();
+     }
+    }@mergeDummy(token)
+     @standardOutput<-println("passed empty join block with return values");    
+    }
+
+    if (testcode==4) {
+    //test join block and currentContinuation
+    join {
+     for (int i=0;i<100;i++) {
+      dummy();
+     }
+    }@testCont(new Integer(1000))
+     @standardOutput<-println("passed join block following currentContinuation");    
+    }
+
+    if (testcode==5) {
+    //test join block within currentContinuation
+    // and return values
+    join {
+     for (int i=0;i<100;i++) {
+      testCont(new Integer(i));
+     }
+    }@mergeDummy(token)
+     @standardOutput<-println("passed join block within currentContinuation");    
+    }
+/*
+    join {
+      join{dummy();dummy();};
+      join{dummy();dummy();};
+      join{dummy();dummy();};
+    }@mergeDummy(token)
+     @standardOutput<-println("passed phase 6");    
+*/
+
+    if (testcode==6) {
+      join{
+        add(new Integer(1),new Integer(2))@add(token,new Integer(3));
+        add(new Integer(4),new Integer(5))@add(token,new Integer(6));
+        add(new Integer(7),new Integer(8))@add(token,new Integer(9));
+        add(new Integer(10),new Integer(11))@add(token,new Integer(12));
+      }@add(token)@standardOutput<-print(token)@standardOutput<-println(" = 78");
+    }
+ 
+    if (testcode==7) {
+	token x= self<-returnStr("J0 "):delay(new Integer(10000));
+	token y= returnStr(""):delay(new Integer(4000));
+      join{
+        returnStr("J1 "):waitfor(x,y);
+        returnStr("J2 ");
+        returnStr("J3 "):delay(new Integer(7000));
+        returnStr("J4 ");
+        returnStr("J5 ");
+        returnStr("J6 ");
+        returnStr("J7 ");
+      }@showStr(x,token)@standardOutput<-print(token)@standardOutput<-println("The result should be printed out in order!");
+    }
+
+    if (testcode==8) {
+        int size=0;
+        try {size= Integer.parseInt(args[1]);       }catch (Exception e) {}
+        JoinAndContTest[] actors=new JoinAndContTest[size];
+	for (int i=0;i<actors.length;i++) {
+	  actors[i]=new JoinAndContTest();
+	}
+	join{
+	  for (int i=0;i<actors.length;i++) {
+	    actors[i]<-dummy()@returnStr("??")@actors[i]<-dummy();
+	  }}@combine(token)@standardOutput<-println(token);
+    }
+
+    if (testcode==9) {
+        try {turns= Integer.parseInt(args[1]);       }catch (Exception e) {}
+        startRecursion();
+    }
+  }
+
+  int turns=0;
+  ActorReference c1,c2;
+  void startRecursion() {
+    c1=new JoinAndContTest();
+    c2=new JoinAndContTest();
+      zero()@standardOutput<-println("\npassed continuation recursion tests");
+  }
+
+  void zero() {turns--;
+System.out.print("0");
+    if (turns>0) {
+      join{c1<-callBack0();c2<-callBack0();}@first()@currentContinuation;
+    }
+  }
+  void callBack0() {System.out.print("a");}
+  void first() { System.out.print("1");join{c1<-callBack1();c2<-callBack1();}@second()@currentContinuation;}
+  void callBack1() {System.out.print("b");}
+  void second() {System.out.print("2");join{c1<-callBack1();c2<-callBack1();}@zero()@currentContinuation;}
+  void callBack2() {System.out.print("c");}
+
+  String returnStr(String val) {return val;}
+
+  String showStr(String x1, Object[] data) {
+    System.out.println(x1);
+    for (int i=0;i<data.length;i++) {
+      String str=(String)data[i];
+      System.out.println(str);
+    }
+    return ": ";
+  }
+
+  Integer dummy() {return new Integer(1);}
+
+  Integer add(Integer a, Integer b) {
+    return new Integer(a.intValue()+b.intValue());
+  }
+
+  Integer add(Object[] data) {
+    int sum=0;
+ 
+    for (int i=0;i<data.length;i++) {
+      sum+=((Integer)data[i]).intValue();
+    }
+    return new Integer(sum);
+  }
+
+  void mergeDummy(Object[] args) {
+    if (args.length==0) {dummy();}
+  }
+
+  Integer testCont(Integer i) {
+    int j=i.intValue();
+    if (i.intValue()>0) {
+      testCont(new Integer(j-1)) @ currentContinuation;
+    } else {return new Integer(0);}
+  }
+
+
+  Integer combine(Object[] data) {
+    int sum=0;
+    for (int i=0;i<data.length;i++) {
+      sum+=((Integer)data[i]).intValue();
+    }
+    return new Integer(sum);
+  }
+
+}

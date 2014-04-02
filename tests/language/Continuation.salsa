@@ -1,0 +1,31 @@
+module tests.language;
+
+behavior Continuation {
+
+    int i(int n){ return ++n; }
+    int d(int n){ return n*2; }
+    int m(int n1, int n2) { return n1*n2; }
+    int a(int n1, int n2) { return n1+n2; }
+    int s(int n1, int n2) { return n1-n2; }
+    int p(int n){ standardOutput<-print(n+" "); return n;}
+
+    void act(String[] args){
+	i(0) @ 
+	p(token) @ 
+	d(token) @ 
+	p(token) @ 
+	i(token) @ 
+	p(token) @ 
+	d(token) @ 
+	p(token) @ 
+	i(token) @ 
+	p(token) @ 
+	m(token,10) @ 
+	p(token) @ 
+	a(3,token) @ 
+	p(token) @ 
+	s(token,1) @ 
+	p(token) @
+	standardOutput <- print("hi");
+    }
+}

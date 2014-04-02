@@ -1,0 +1,8 @@
+module tests.language;
+
+behavior ExceptionTest {
+
+    void act(String[] args) throws Exception{
+	standardOutput<-print("Testing exceptions");
+    }
+}

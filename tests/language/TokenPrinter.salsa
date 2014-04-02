@@ -1,0 +1,61 @@
+module tests.language;
+
+behavior TokenPrinter {
+
+    int compute(){
+	return 5;
+    }
+
+    String computeString(){
+	return "a string";
+    }
+
+    Object computeObject(){
+	return new Integer(5);
+    }
+
+    void print(int number){
+	standardOutput<-println(new Integer(number+2));
+    }
+
+    // This one is never chosen as Salsa converts Wrapper types into
+    // primitive types when looking for which method to apply.  
+    void print(Integer number){
+	standardOutput<-println(number);
+    }
+
+    void print(String string){
+	standardOutput<-println(string+" indeed.");
+    }
+
+    // This one is more general and should NOT be chosen
+    // for int or String:
+    void print(Object object){
+	standardOutput<-println("Object:" + object);
+    }
+
+    void act(String[] args){
+
+        compute() @ print(token);
+        computeString() @ print(token);
+        computeObject() @ print(token);
+
+	/*  Things can get pretty nasty: */
+        int i = 0;  String s = "s";
+	print(1) @    // wrapped automatically into an Integer; will use print(int);
+	print(s) @    // will work fine
+	print ("a"+"b") @  // will work fine
+	print(new Integer(1)) @ // will work fine, but will use print(int);
+	print(new Integer(1+1)) ; // will work fine, but will use print(int);
+	    /* Not working yet:
+	print(Integer.parseInt("4")) @  // will work fine, must catch possible NFException
+        print(Integer.parseInt(args[0])) @ // ok if argument is correct; else Exception
+
+	print(i) @    // will fail because it's not wrapped as an Integer object
+	print(i+1) @  // will fail because it's not wrapped as an Integer object
+	print(1+1) @  // will fail because it's not wrapped as an Integer object
+        print(compute());  // must fail ::= print(VOID); 
+	    */
+    }
+
+}

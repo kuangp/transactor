@@ -1,0 +1,46 @@
+
+module gctest.global;
+
+behavior FourHostCycle {
+    FourHostCycle next;
+    String nameServer;
+    String[] hostArray;
+    int myid;
+
+	FourHostCycle (int id,String ns,String[] _hostArray) {myid=id;nameServer=ns;hostArray=_hostArray;}
+
+	void thinking(FourHostCycle firstActor) {
+System.out.println("thinking!");
+	  if (myid%4!=3) {
+          try {Thread.sleep(1000);} catch (Exception e) {}
+          next=new FourHostCycle(myid+1,nameServer,hostArray) at (new UAN("uan://"+nameServer+"/FHC/"+(myid+1)),new UAL("rmsp://"+hostArray[(myid+1)%4]+"/FHC/"+(myid+1)));
+
+          next<-thinking(firstActor);
+        } else {
+          next=firstActor; 
+          try {Thread.sleep(1000);} catch (Exception e) {}
+        }
+      }
+
+	void act(String args[]) {
+	    FourHostCycle starter;
+          String[] hostArray=new String[4];
+            try{
+		  int n = Integer.parseInt(args[0]);
+              nameServer=args[1];
+              for (int i=0;i<4;i++) {hostArray[i]=args[2+i];}
+		  for (int i=0;i<n;i++) { 
+                starter=new FourHostCycle(i*4,nameServer,hostArray) at(new UAN("uan://"+nameServer+"/FHC/"+i*4),new UAL("rmsp://"+hostArray[0]+"/FHC/"+i*4));
+                starter<-thinking(starter);
+                try {Thread.sleep(4000);} catch (Exception e) {}
+              }
+		  
+		  standardOutput<-println("done");
+            } catch (Exception e) {
+		  System.err.println(e);
+		  System.err.println("Usage: java gctest.global.FourHostCycle <cycle number> <Name Server> <host1> <host2> <host3> <host4>");
+		  System.err.println("       where <Name Server> should be hostname:port"); 
+		  System.err.println("             <host> should be hostname:port"); 
+            }
+	}
+}

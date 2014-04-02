@@ -1,0 +1,28 @@
+module examples.messenger;
+
+behavior Sender {
+
+    void act(String[] args){
+		Recipient recipient = new Recipient();
+		Letter letter = new Letter(self, "Try Once Messenger");
+	    recipient<-process(letter);
+	
+		recipient = new Recipient();
+		letter = new Letter(self, "Try Forever Messenger");
+		recipient<-process(letter) @ letter<-retry(token);
+	
+		recipient = new Recipient();
+		letter = new Letter(self, "Try Twice Messenger");
+		recipient<-process(letter) @ letter<-failed(token);
+	}
+	
+	String combineString(String str1,String str2) {
+	  return str1+str2;
+	}
+
+	void log(Letter letter){
+		letter<-returnName() @
+		combineString(token," reported failure.") @ 
+		standardError<-println(token);
+	}
+}

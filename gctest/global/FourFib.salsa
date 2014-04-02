@@ -1,0 +1,81 @@
+
+module gctest.global;
+
+
+behavior FourFib {
+    int n;
+
+	FourFib (int _n) {n=_n;}
+
+	int add(int x, int y) {
+		return x + y;
+	}
+
+	int addAll(int a, int b, int c ,int d) {return a+b+c+d;}
+
+	int fibfun(int nn) {
+		if (nn == 0) 		{return 0;}
+		else if (nn <= 2) 	{return 1;}
+            else {return (this.fibfun(nn-1)+this.fibfun(nn-2));} 
+
+      }
+
+	int compute() {
+		if (n == 0) 		{return 0;}
+		else if (n <= 2) 	{return 1;}
+            else if (n<=30) {return (this.fibfun(n));}
+		else {
+			FourFib fib1 = new FourFib(n-1) ;
+
+			FourFib fib2 = new FourFib(n-2); 
+
+			token x = fib1<-compute();
+			token y = fib2<-compute();
+
+			add(x, y) @ currentContinuation;
+		}
+	}
+
+	void end(Object x) {
+        System.out.println(x);
+        //System.exit(0);
+      }
+
+	void act(String args[]) {
+           String[] hostArray=new String[4];
+            try{
+		  n = Integer.parseInt(args[0]);
+              
+              String nameServer=args[1];
+              for (int i=0;i<4;i++) {hostArray[i]=args[2+i];}
+			FourFib fib1 = new FourFib(n-2) 
+			  at (new UAN("uan://"+nameServer+"/FHF/1"),
+                       new UAL("rmsp://"+hostArray[0]+"/FHF/1"));
+
+			FourFib  fib2 = new FourFib(n-3) 
+			  at (new UAN("uan://"+nameServer+"/FHF/2"),
+                       new UAL("rmsp://"+hostArray[1]+"/FHF/2"));
+
+			FourFib fib3 = new FourFib(n-3) 
+			  at (new UAN("uan://"+nameServer+"/FHF/3"),
+                       new UAL("rmsp://"+hostArray[2]+"/FHF/3"));
+
+			FourFib fib4 = new FourFib(n-4) 
+			  at (new UAN("uan://"+nameServer+"/FHF/4"),
+                       new UAL("rmsp://"+hostArray[3]+"/FHF/4"));
+token a1=fib1<-compute();
+token a2=fib2<-compute();
+token a3=fib3<-compute();
+token a4=fib4<-compute();
+
+
+		  addAll(a1,a2,a3,a4) @ self<-end(token);
+
+            } catch (Exception e) {
+		  System.err.println(e);
+		  System.err.println("Usage: java gctest.global.FourHostFib <number> <Name Server> <host1> <host2> <host3> <host4>");
+		  System.err.println("       where <Name Server> should be hostname:port"); 
+		  System.err.println("             <host> should be hostname:port"); 
+            }
+	}
+}

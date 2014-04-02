@@ -1,0 +1,110 @@
+module examples.Heat;
+
+import java.io.*;
+
+behavior HeatWorker {
+
+    int x; int y;
+    double[][] data; double[][] next;
+    HeatWorker top; HeatWorker bottom;
+    boolean topOk = false; boolean bottomOk = false;
+
+    HeatWorker(double [][] inData){
+	x = inData.length+2;
+	y = inData[0].length;
+
+	data = new double[x][]; 
+	// first and last row represent neighbours data
+	// -1 if not assigned; v if assigned;
+	// topOk and bottomOk determine whether data is "dirty" or not.
+	data[0] = new double[y];
+	data[x-1] = new double[y];
+	for (int j = 0; j<y; j++){
+	    data[0][j] = data[x-1][j] = -1;
+	}
+	
+	//copy inside values
+	for (int i = 0; i<x-2; i++){
+	    data[i+1] = new double[y];
+	    System.arraycopy(inData[i],0,data[i+1],0,y);
+	}
+	// temporary matrix
+        next = new double[x][];
+	for (int i = 0; i<x; i++){
+	    next[i] = new double[y];
+	    System.arraycopy(data[i],0,next[i],0,y);
+	}
+
+    }
+
+    void connectTop(HeatWorker w){
+	top = w;
+	top<-bottomRow(data[0]);
+    }
+
+    void connectBottom(HeatWorker w){
+	bottom = w;
+	bottom<-topRow(data[x-1]);
+    }
+
+    void topRow(double[] row){
+	System.arraycopy(row, 0, data[0], 0, y);
+	topOk = true;
+    }
+
+    void bottomRow(double[] row){
+	System.arraycopy(row, 0, data[x-1], 0, y);
+	bottomOk = true;
+    }
+
+    double[][] doWork(int iterations){
+	
+	//standardOutput<-println(self+" working....");
+	//System.out.println("Inside doWork");
+
+	if (((bottom == null) || (bottomOk)) &&
+	    ((top == null) || (topOk))){
+
+	    int from = (top==null?2:1);
+	    int to = (bottom==null?x-2:x-1);
+
+	    //System.out.println("Iteration #"+iterations);	
+	         
+
+	    for(int i=from; i<to; i++)
+		for(int j=1; j<y-1; j++)
+		    next[i][j]=0.25*(data[i-1][j]+data[i][j-1]
+				     +data[i+1][j]+data[i][j+1]);
+	     
+	    double [][]temp=next; next=data; data=temp;
+	    
+	    if (top != null)    top<-bottomRow(data[0]);
+	    if (bottom != null) bottom<-topRow(data[x-1]);
+
+	    topOk = false;
+	    bottomOk = false;
+
+	    if (iterations == 0) {
+		double [][] results = new double[x-2][];
+		System.arraycopy(data, 1, results, 0, x-2);
+		return results;
+	    }
+	    else {
+		//		standardOutput<-println("Iterations left:"+(iterations-1));
+		doWork(new Integer(iterations-1)) @ currentContinuation;
+	    }
+	} else{
+	    //ideal would be wait for incoming topRow or bottomRow message
+	    // otherwise wait some time(with Thread.wait(ms)?)
+	    //	    if ((bottom!=null) && (!bottomOk))
+	    //		standardOutput<-println(self+" waiting for bottom neighbor");
+	    //	    if ((top!=null) && (!topOk))
+	    //		standardOutput<-println(self+" waiting for top neighbor");
+	    // this is a busy loop --not the best idea
+	    doWork(new Integer(iterations))@currentContinuation;
+	}
+
+    }
+
+
+}

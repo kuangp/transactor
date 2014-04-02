@@ -1,0 +1,14 @@
+module examples.ping;
+
+behavior EchoAgent implements ActorService{
+
+   void echo(Ping p) {
+	p<-pong();
+	}
+
+   void act(String args[]) {
+	try{
+	  migrate(args[0]);
+	} catch (Exception e) {standardOutput <- println("Usage: java -Duan=uan_addr -Dual=ual_addr examples.ping.EchoAgent <target_ual>");}
+   }
+}

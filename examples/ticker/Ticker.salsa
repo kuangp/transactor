@@ -1,0 +1,36 @@
+  
+module examples.ticker;
+
+behavior Ticker {
+    
+    int t=0;
+    
+     
+    void tick()
+    {
+    	t++;
+    	tick();
+    	standardOutput<-println(new Integer(t));
+    }
+    
+    void act(String args[]){
+	System.out.println("Hii in Salsa");
+	try { 	
+ 	Ticker t1 = new Ticker() at (new UAN("uan://"+args[0]+"/a"),
+            new UAL("rmsp://"+args[1]+"/a"));
+    
+    Ticker t2 = new Ticker() at (new UAN("uan://"+args[0]+"/b"),
+            new UAL("rmsp://"+args[2]+"/b"));
+ 
+ 	t1<-tick(); t2<-tick();
+ 	
+      
+    t1<-migrate("rmsp://"+args[3]+"/a");
+    t2<-migrate("rmsp://"+args[3]+"/b");
+    } catch (Exception e) {
+      System.err.println("java examples.ticker.Ticker <nameserver:port> <host1:port> <host2:port> <host3:port>");
+    }
+       
+     
+    }
+}

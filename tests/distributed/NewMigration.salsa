@@ -1,0 +1,73 @@
+module tests.distributed;
+
+behavior NewMigration{
+  int sum=0;
+  String host1="";
+  String host2="";
+  UAL home;
+  NewMigration ref;
+
+  public NewMigration(){}
+
+  public NewMigration(Integer val,String h1, String h2) {
+    sum=val.intValue();
+    host1=h1;
+    host2=h2;
+  }
+
+  public void test1() {
+    sum--;
+    if (sum>0) {
+      if (sum % 2==0) { migrate(host1)@showResult()@standardOutput<-println(token)@test1()@currentContinuation;}
+      else if (sum % 2==1) { migrate(host2)@showResult()@standardOutput<-println(token)@test1()@currentContinuation;}
+    }
+    migrate(home)@currentContinuation;
+  }
+
+  public void test2() {
+    String nameServer=getUAN().getID();
+    NewMigration a=new NewMigration(new Integer(sum),host1,host2) at (this.generateUAN(nameServer),null);
+    NewMigration b=new NewMigration(new Integer(sum),host1,host2) at (this.generateUAN(nameServer),null);
+    join{
+      a<-setRef(b);
+      b<-setRef(a);
+    }@a<-pingpong()@currentContinuation;
+  }
+
+  public void pingpong() {
+    sum--;
+    if (sum>0) {
+      if (sum % 2==0) { ref<-pingpong()@migrate(host1)@showResult()@standardOutput<-println(token)@currentContinuation;}
+      else if (sum % 2==1) { ref<-pingpong()@migrate(host2)@showResult()@standardOutput<-println(token)@currentContinuation;}
+    }
+    showResult()@standardOutput<-println(token)@currentContinuation;
+  }
+
+  public void setRef(NewMigration val) {
+    ref=val;
+  }
+
+  int test=0;
+  public String showResult() {
+    test++;
+    return getUAL()+","+test;
+  }
+
+  public void act(String args[]) {
+    try{
+      sum=(new Integer(args[0])).intValue();
+      host1=args[1];
+      host2=args[2];
+      home=this.getUAL();
+      if (this.getUAN()==null) {standardOutput<-println("-Duan=??");}
+      else{
+	test1()@
+        standardOutput<-println("======finished phase 1");
+        test2()@
+        standardOutput<-println("======finished phase 2");
+
+      }
+    }catch (Exception e) {standardOutput<-println("java -Duan=<uan> tests.distributed.NewMigration <#> <host name 1> <host name 2>");}
+  }
+
+}

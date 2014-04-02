@@ -1,0 +1,25 @@
+module tests.language;
+
+behavior JoinContinuation {
+
+	int multiply(Object numbers[]){
+		return ((Integer)numbers[0]).intValue() * 
+		       ((Integer)numbers[1]).intValue() * 
+		       ((Integer)numbers[2]).intValue();
+	}
+
+	int add(int n1, int n2) {
+		return n1 + n2;
+	}
+
+	void act(String args[]) {
+
+		standardOutput<-print("Value: ") @ 
+		join {
+			add(2,3);
+			add(3,4);
+			add(2,4);
+		} @ multiply( token ) @ standardOutput<-println( token );
+	}
+
+}

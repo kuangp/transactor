@@ -1,0 +1,18 @@
+module examples.numbers;
+
+behavior Number {
+
+    int number;
+
+    Number(int number){
+	this.number = number;
+    }
+
+    void print(){
+	standardOutput<-print(number+" ");
+    }
+
+    void inc(){
+	number++;
+    }
+}

@@ -1,0 +1,57 @@
+module tests.distributed;
+
+import java.io.*;
+import java.util.*;
+
+behavior MassMessage {
+  int myID;
+  boolean[] received;
+
+  transient String theatersFile="theaters.txt";
+  transient String nameServer="";  
+
+  public MassMessage(int i,int maxVal) {
+	myID=i;
+	received=new boolean[maxVal];
+  }
+
+  public void sendData(Integer index) {
+    received[index.intValue()]=true;
+  }
+ 
+  void act(String args[]) {
+    try{
+	MassMessage[] actors=new MassMessage[Integer.parseInt(args[1])];
+	if (args.length>3) {theatersFile=args[3];}
+	nameServer=args[2];
+
+	// read available theaters
+	Vector theaters = new Vector();
+	String theater;
+	try {
+	  BufferedReader in = new BufferedReader(new FileReader(theatersFile));
+	  while ((theater = in.readLine())!= null){theaters.add(theater);}
+	  in.close(); 
+	} catch (IOException ioe){
+	  standardOutput<-println("[error] Can't open the file "+theatersFile+" for reading.");
+	}
+        int SIZE = Integer.parseInt(args[0]);   /*  <- N  */
+	for (int i=0;i<actors.length;i++) {
+	  actors[i]=new MassMessage(i,SIZE) at
+		(new UAN("uan://"+nameServer+"/MM"+i), 
+                 new UAL("rmsp://"+theaters.get(i%theaters.size())+"/MM"+i)
+                );
+	}
+	join{
+	for (int j=0;j<SIZE;j++)
+	for (int i=0;i<actors.length;i++) {
+	  actors[i]<-sendData(new Integer(j));
+	}}@standardOutput<-println("Done!");
+    } catch (Exception e) {
+	System.err.println("USAGE:java tests.distributed.MassMessage <N> <# of actors> <name server> <theater file>");	
+    }
+    
+    
+  }
+
+}

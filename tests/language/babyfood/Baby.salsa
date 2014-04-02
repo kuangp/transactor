@@ -1,0 +1,44 @@
+module tests.language.babyfood;
+
+behavior Baby extends Man {
+        
+    void eat(Food f){
+	standardOutput<- println("Sorry, Baby can't eat Food!");
+    }
+
+        void eat(BabyFood bf) {
+	    bf <- mash();
+	    super.eat(bf);
+        }
+
+	String toString() {
+	    return "Baby";
+	}
+
+        // tests
+        void act(String[] args) {
+                Man m = new Man();
+                Baby b = new Baby();
+                Food f = new Food();
+                BabyFood bf = new BabyFood();
+
+                m<-eat(f);
+                // -> Man@1dacd409 eats Food@1dacd406
+
+                m = b;  // Eiffel-style polymorphic catcall
+                m<-eat(f);
+                // -> Baby@1dacd408 eats Food@1dacd406
+
+        // and more...
+                f = bf;
+                m<-eat(f);
+                // -> Baby@1dacd408 eats BabyFood@1dacd404
+
+                b<-eat(f);
+                // -> Baby@1dacd408 eats BabyFood@1dacd404
+
+                b<-eat(bf); // the only consistent with the program intention
+                // -> mashes BabyFood@1dacd404
+                //    Baby@1dacd408 eats BabyFood@1dacd4
+        }
+}

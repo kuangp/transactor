@@ -1,0 +1,125 @@
+
+module gctest.global;
+import java.util.*;
+import java.io.*;
+
+behavior FourHostMatrixMul {
+
+  double[][] data=null;
+  int count=0;
+
+  public FourHostMatrixMul() {  }
+
+  public double[][] mul(double[][] A, double[][]  B) {
+    try {
+      int numRowsA = A.length; // number of rows in A
+      int numColsA = A[0].length; // number of columns in A
+      int numColsB = B[0].length; // number of columns in B
+
+      // define result matrix C
+      double[][] C = new double[numRowsA][numColsB];
+
+      // matrix multiplication
+      for (int a = 0; a < numRowsA; a++) {
+            for (int b = 0; b < numColsB; b++) {
+                double sum = 0;
+                for (int col = 0; col < numColsA; col++) {
+                    sum += A[a][col] * B[col][b];
+                }
+                C[a][b] = sum;
+            }
+      }
+      return C;
+    } catch (Exception e) {return null;}
+  }
+
+  public void setData(double[][] rowdata, Integer row) {
+    data[row.intValue()]=rowdata[0];
+    count--;
+    if (count==0) {self<-show(data);}
+  }
+
+  public void show(double[][] C) {
+    // show result on screen
+    try {
+      for (int row = 0; row < C.length; row++) {
+        for (int col = 0; col < C[0].length; col++) {
+          System.out.print(C[row][col] + " ");
+        }
+        System.out.println();
+      }
+    }catch (Exception e) {System.out.println("Wrong Data");}
+  }
+
+  public void act(String[] args) {
+    double[][] A,B;
+    String[] hostArray=new String[4];
+    try{
+      String nameServer=args[0];
+      for (int i=0;i<4;i++) {hostArray[i]=args[1+i];}
+	BufferedReader data1 = new BufferedReader(new InputStreamReader(new FileInputStream(args[5])));
+	BufferedReader data2 = new BufferedReader(new InputStreamReader(new FileInputStream(args[6])));
+      int arow=Integer.parseInt(args[7]);
+      int acol=Integer.parseInt(args[8]);
+      int bcol=Integer.parseInt(args[9]);
+      int N=4;
+      A=new double[arow][acol];
+      B=new double[acol][bcol];
+
+
+      for(int i=0;i<arow;i++) {
+        String line=data1.readLine();
+        if (line==null || line.length()==0) {i--;continue;}
+        StringTokenizer st=new StringTokenizer(line);
+        for (int j=0;j<acol;j++) {
+          A[i][j]=Double.parseDouble(st.nextToken());
+        }
+      }
+
+      for(int i=0;i<acol;i++) {
+        String line=data2.readLine();
+        if (line==null || line.length()==0) {i--;continue;}
+        StringTokenizer st=new StringTokenizer(line);
+        for (int j=0;j<bcol;j++) {
+          B[i][j]=Double.parseDouble(st.nextToken());
+        }
+      }
+    
+      FourHostMatrixMul[] mm=new FourHostMatrixMul[4]; 
+    
+      mm[0]=new FourHostMatrixMul() at 
+                      (new UAN("uan://"+nameServer+"/FHM/0"),
+                       new UAL("rmsp://"+hostArray[0]+"/FHM/0"));
+      mm[1]=new FourHostMatrixMul() at 
+                      (new UAN("uan://"+nameServer+"/FHM/1"),
+                       new UAL("rmsp://"+hostArray[1]+"/FHM/1"));
+      mm[2]=new FourHostMatrixMul() at 
+                      (new UAN("uan://"+nameServer+"/FHM/2"),
+                       new UAL("rmsp://"+hostArray[2]+"/FHM/2"));
+      mm[3]=new FourHostMatrixMul() at 
+                      (new UAN("uan://"+nameServer+"/FHM/3"),
+                       new UAL("rmsp://"+hostArray[3]+"/FHM/3"));
+    
+    
+    count=arow;
+    data=new double[arow][bcol];
+    double[][] rowdata=new double[1][acol];
+    for (int i=0;i<arow;i++) {
+      rowdata[0]=A[i];
+      (mm[i%N])<-mul(rowdata,B)@setData(token,new Integer(i));
+    }
+
+    //self<-mul()@self<-show(token);
+
+
+    } catch (Exception e) {
+        System.err.println(e);
+        System.err.println("USAGE: java -cp <lib> gctest.global.FourHostMatrixMul <namesvc> <host1> <host2> <host3> <host4> <filename1> <filename2> <Arow> <Acol> <Bcol>");
+        return;
+    }
+
+
+
+  }
+}
+

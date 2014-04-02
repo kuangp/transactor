@@ -1,0 +1,18 @@
+module tests.language.babyfood;
+
+behavior BabyFood extends Food {
+
+        void mash() {
+		toString() @
+		combineString("mashes ",token) @
+                standardOutput <- println(token);
+        }
+
+	String combineString(String str1, String str2) {
+	  return str1+str2;
+	}
+
+	String toString() {
+	    return "BabyFood";
+	}
+}

@@ -1,0 +1,251 @@
+module gc.serverGC;
+
+import gc.*;
+import java.util.*;
+
+behavior CycleDetective {
+
+  HashSet hostList; //in format  "rmsp://machineName:port/"
+  HashSet visited;
+  Vector toVisit;
+  HashSet toVisitElement;
+  WeakReference currentGCAgent=null;
+
+  public CycleDetective() {
+    hostList=new HashSet();
+    visited=new HashSet();
+    toVisit=new Vector();
+    toVisitElement=new HashSet();
+  }
+
+  public void clearAndSet(String refString) {
+System.out.println("clearAndSet:"+refString);
+    hostList.clear();
+    visited.clear();
+    toVisit.clear();
+    toVisitElement.clear();
+    if (refString!=null) {
+      String location;
+      WeakReference ref;
+      try{
+        if (refString.charAt(0) == 'u') {
+          //this is a uan
+          location = ServiceFactory.getNaming().queryLocation(new UAN(refString));
+System.out.println(":::::::::::::::::::::::::"+location);
+          currentGCAgent=new WeakReference(null, new UAL(location + "salsa/GCAgent"));
+        }
+        else {
+          location = (new UAL(refString)).getLocation();
+          currentGCAgent=new WeakReference(null, new UAL(location + "salsa/GCAgent"));
+        }
+        hostList.add(location);
+
+        currentGCAgent<-looseFindNonLocal(refString)
+        @ self<-backTrace(token,refString)
+        @ currentContinuation;
+      }catch (Exception e) {}
+    }
+  }
+
+  public WeakReference getRemoteGCAgent(String refString) {
+System.out.println("getRemoteGCAgent:"+refString);
+    WeakReference ref;
+    String location="";
+    if (refString!=null) {
+      try{
+        if (refString.charAt(0) == 'u') {
+          //this is a uan
+          location = ServiceFactory.getNaming().queryLocation(new UAN(
+              refString));
+          ref=new WeakReference(null, new UAL(location + "salsa/GCAgent"));
+        }
+        else {
+          location = (new UAL(refString)).getLocation();
+          ref=new WeakReference(null, new UAL(location + "salsa/GCAgent"));
+        }
+        if (!location.equals(currentGCAgent.getUAL().getLocation())) {return ref;}
+      }catch (Exception e) {
+	
+      }
+    }
+    return null;
+  }
+
+
+  public void isLocalSnapshotMember() {
+System.out.println("isLocalSnapshotMember");
+    if (toVisit.size()==0) {
+      /*
+       there might be a cycle,
+       do next step!
+       */
+      System.out.println("do next step!");
+      self<-synchronizeSnapshot();
+      return;
+    }
+
+    String actor=(String)toVisit.remove(0);
+    this.toVisitElement.remove(actor);
+
+
+
+     currentGCAgent<-looseFindNonLocal(actor)
+     @ self<-backTrace(token,actor)
+     @ currentContinuation;
+     
+    //return;
+  }
+
+
+  /*
+    That newGCAgent=null means either
+    1. the target actor with id is dead.
+    2. the target actor is in the local host. If localActor=null,
+       localActor does not belong to the pure non-local reachiable set
+   */
+  public void backTrace(ActorSnapshot localActor,String id) {
+System.out.println("backTrace:"+id);
+    if (localActor==null) {
+      WeakReference newGCAgent=getRemoteGCAgent(id);
+      if (newGCAgent!=null) {
+        hostList.add(newGCAgent.getUAL().getLocation());
+
+        currentGCAgent=newGCAgent;
+        currentGCAgent<-looseFindNonLocal(id)
+        @ self<-backTrace(token,id)
+        @ currentContinuation;
+      } else{
+System.out.println("failed to search!:");
+      }
+    } else {
+      visited.add(id);
+      if (localActor.iList!=null) {
+        for (int i = 0; i < localActor.iList.length; i++) {
+          if (!visited.contains((String)localActor.iList[i]) && 
+              !toVisitElement.contains((String)localActor.iList[i])) {
+            toVisit.add(localActor.iList[i]);
+            toVisitElement.add(localActor.iList[i]);
+          }
+        }
+      }
+      self<-isLocalSnapshotMember()
+      @ currentContinuation;
+    }
+  }
+
+          public void synchronizeSnapshot() {
+System.out.println("synchronizeSnapshot");
+            Object[] hosts = this.hostList.toArray();
+            String myid = null;
+            if (getUAN() != null) { myid = getUAN().toString();}
+            else {myid = getUAL().toString(); }
+            if (hosts.length == 0) { return;}
+            join {
+              for (int i = 0; i < hosts.length; i++) {
+                if (hosts[i] == null) {continue;}
+                String location = (String) hosts[i];
+                WeakReference ref = new WeakReference(null,
+                                     new UAL(location + "salsa/GCAgent"));
+                ref<-requestSnapShot(myid);
+              }
+            }@reserveSnapshot()@currentContinuation;
+          }
+
+	  public void reserveSnapshot() {
+System.out.println("reserveSnapshot");
+            Object[] hosts = this.hostList.toArray();
+            String myid = null;
+            if (getUAN() != null) { myid = getUAN().toString();}
+            else {myid = getUAL().toString(); }
+            if (hosts.length == 0) { return;}
+            join {
+              for (int i = 0; i < hosts.length; i++) {
+                if (hosts[i] == null) {continue;}
+                String location = (String) hosts[i];
+                WeakReference ref = new WeakReference(null,
+                                     new UAL(location + "salsa/GCAgent"));
+                ref<-reserveSnapshot(myid);
+              }
+            }@getInvList()@currentContinuation;
+          }
+      
+          public void getInvList() {
+System.out.println("getInvList");
+            Object[] actors = this.visited.toArray();
+            String myid = null;
+            salsa.naming.NamingService naming = ServiceFactory.getNaming();
+            if (getUAN() != null) { myid = getUAN().toString();}
+            else {myid = getUAL().toString();}
+            if (actors.length == 0) {return;}
+            join {
+              for (int i = 0; i < actors.length; i++) {
+                if (actors[i] == null) {continue;}
+                String actorLocation = (String) actors[i];
+                String host;
+                if (actorLocation.charAt(0) == 'u') {
+                  host = naming.queryLocation(new UAN(actorLocation));
+                }
+                else {
+                  host = (new UAL(actorLocation)).getLocation();
+                }
+                WeakReference ref = new WeakReference(null,
+                                      new UAL(host + "salsa/GCAgent"));
+                ref<-returnInvList(myid,actorLocation);
+              }
+            }@handleReserveSnapshot(token)@finalizeGC(token)@currentContinuation;
+          }
+      
+          public Boolean handleReserveSnapshot(Object[] invLists) {
+System.out.println("handleReserveSnapshot");
+            for (int i = 0; i < invLists.length; i++) {
+              if (invLists[i] != null) {
+                Object[] invList = (Object[]) invLists[i];
+                for (int j = 0; j < invList.length; j++) {
+                  if (invList[j] == null) {continue;}
+		  if (invList[j] instanceof Boolean) {return (Boolean)invList[j];}
+                  if (!visited.contains(invList[j])) {
+                    return new Boolean(false);
+                  }
+                }
+              }
+            }
+            return new Boolean(true);
+          }
+          
+          public void finalizeGC(Boolean result) {
+System.out.println("finalizeGC:"+result);
+            Object[] hosts = this.hostList.toArray();
+            String myid = null;
+            if (getUAN() != null) {myid = getUAN().toString();}
+            else {myid = getUAL().toString();}
+            if (hosts.length == 0) {return;}
+            try {
+              if (result.booleanValue()) {
+                for (int i = 0; i < hosts.length; i++) {
+                  if (hosts[i] == null) {continue;}
+                  String location = (String) hosts[i];
+                  WeakReference ref = new WeakReference(null,
+                                       new UAL(location + "salsa/GCAgent"));
+                  ref<-cycleKilling(myid);
+                }
+              }
+              return;
+            } catch (Exception e) {}
+
+            for (int i = 0; i < hosts.length; i++) {
+              if (hosts[i] == null) {continue;}
+              String location = (String) hosts[i];
+              WeakReference ref = new WeakReference(null,
+                        new UAL(location + "salsa/GCAgent"));
+              ref<-noCycleResume(myid);
+            }
+            
+          }
+
+  public void act(String[] args) {
+    try {
+      self<-clearAndSet(args[0]);
+    } catch (Exception e) {System.out.println(e);}
+  }
+  
+}

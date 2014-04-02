@@ -1,0 +1,6 @@
+module salsa.resources;
+
+public interface StorageService {
+	public void store(Object object, String filename);
+	public Object get(String filename);
+}

@@ -1,0 +1,61 @@
+module tests.distributed;
+
+import java.io.*;
+import java.util.*;
+
+behavior Test {
+
+  transient String theatersFile="theaters.txt";
+  transient String nameServer="";  
+
+  public Test() {
+	
+  }
+
+  Integer one() {return new Integer(1);}
+
+  Integer combine(Object[] data) {
+    int sum=0;
+    for (int i=0;i<data.length;i++) {
+      sum+=((Integer)data[i]).intValue();
+    }
+    return new Integer(sum);
+  }
+ 
+  void act(String args[]) {
+    try{
+	Test[] actors=new Test[Integer.parseInt(args[0])];
+	if (args.length>2) {theatersFile=args[2];}
+	nameServer=args[1];
+
+	// read available theaters
+	Vector theaters = new Vector();
+	String theater;
+	try {
+	  BufferedReader in = new BufferedReader(new FileReader(theatersFile));
+	  while ((theater = in.readLine())!= null){theaters.add(theater);}
+	  in.close(); 
+	} catch (IOException ioe){
+	  standardOutput<-println("[error] Can't open the file "+theatersFile+" for reading.");
+	}
+
+	for (int i=0;i<actors.length;i++) {
+	  actors[i]=new Test() at
+		(this.generateUAN(nameServer), 
+                 null
+                );
+	}
+
+
+	join{
+	  for (int i=0;i<actors.length;i++) {
+	  actors[i]<-migrate(theaters.get(i%theaters.size())) @ actors[i]<-one();
+	  }}@combine(token)@standardOutput<-println(token);
+    } catch (Exception e) {
+	System.err.println("USAGE:java tests.distributed.Test <# of actors> <name server> <theater file>");	
+    }
+    
+    
+  }
+
+}

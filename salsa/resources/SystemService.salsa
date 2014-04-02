@@ -1,0 +1,19 @@
+module salsa.resources;
+
+import salsa.language.Actor;
+import salsa.language.Message;
+import salsa.naming.UAN;
+import salsa.naming.UAL;
+import java.util.Hashtable;
+import java.util.Vector;
+import gc.ActorMemory;
+
+import transactor.language.*;
+
+public interface SystemService {
+	public void messageTargetNotFound(Message message);
+	public void createActor(UAN uan, UAL ual, String className);
+	public void removePlaceholder(UAN uan, UAL ual);
+	public void addActor(Actor actor);
+    public void reloadTransactor(byte[] actorBytes, Worldview new_wv, Vector new_mailbox, Hashtable new_pendingMessages, Vector new_unresolvedTokens, ActorMemory new_stateMemory);
+}

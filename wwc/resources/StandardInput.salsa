@@ -1,0 +1,79 @@
+module wwc.resources;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import salsa.resources.InputService;
+
+public behavior StandardInput implements InputService{
+		BufferedReader input = null;
+		ActorReference owner = null;
+		public StandardInput(){
+			input = new BufferedReader(new InputStreamReader(System.in));
+		}
+		public String readLine() {
+			try {
+				return input.readLine();
+			}
+			catch (Exception e) {
+			}
+
+			return "";
+		}
+		public int read() {
+			try {
+				return input.read();
+			}
+			catch (Exception e) {
+			}
+
+			return -1;
+		}
+		public long skip(long n) {
+			try {
+				return input.skip(n);
+			}
+			catch (Exception e) {
+			}
+
+			return -1;
+		}
+/*
+                public Vector lockBox=new Vector();
+
+                public void lock(ActorReference source) {owner=source;}
+
+                public void unlock(ActorReference source) {owner=null;this.resumeLockBox();}
+
+                public void resumeLockBox() {
+		  synchronized(this) {
+                    mailbox.addAll(this.lockBox);
+                    lockBox.clear();
+		  }
+                }
+
+		public void run() {
+			System.out.println("StandardInput got overrided.");
+			while (this.isLive()) {
+				currentMessage = this.getMessage();
+
+				if (currentMessage==null) {continue;}
+                                if (owner!=null) {
+System.out.println("===== > " + owner +",---,"+currentMessage.getSource());
+                                  if (!owner.equals(currentMessage.getSource())) {
+                                      lockBox.add(currentMessage);
+                                      currentMessage = null;
+                                      continue;
+                                  }
+                                }
+
+				
+                                this.process(currentMessage);
+				if (!currentMessage.getMethodName().equals("die")) {
+					RunTime.finishedProcessingMessage();
+				}
+				currentMessage = null;
+			}
+			if (this.isMigrating()) {ServiceFactory.getNaming().delete(this.getUAN());}
+		}
+
+*/
+}

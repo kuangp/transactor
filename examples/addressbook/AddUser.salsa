@@ -1,0 +1,13 @@
+module examples.addressbook;
+
+behavior AddUser {
+
+	void act(String args[]) {
+		if (args.length != 3 ) {
+			standardOutput<-println( "Usage: java examples.addressbook.AddUser <AddressBookUAN> <Name> <Email>" );
+			return;
+		}
+		AddressBook book = (AddressBook)AddressBook.getReferenceByName( new UAN(args[0]) );
+		book<-addUser(args[1], args[2]);
+	}
+}

@@ -1,0 +1,10 @@
+[PropertyInfo]
+activateGC,boolean,false,false, , ,true,<default>
+refSummary,ForwardList,false,false, , ,true,<default>
+sourceRef,WeakReference,false,false, , ,false,<default>
+sourceReference,WeakReference,false,false, , ,true,<default>
+[IconNames]
+
+
+
+

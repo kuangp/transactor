@@ -1,0 +1,19 @@
+module examples.numbers;
+
+behavior Numbers {
+
+    void act(String args[]){
+	
+	Number number = new Number(0);
+
+	Adder adder = new Adder(number);
+	Printer printer = new Printer(number);
+
+	for (int i = 0 ; i<10; i++){
+	    adder<-go();
+	    printer<-go();
+	}
+
+	standardOutput<-println();
+    }
+}

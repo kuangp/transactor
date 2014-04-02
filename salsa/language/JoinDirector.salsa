@@ -1,0 +1,48 @@
+module salsa.language;
+
+import java.util.Vector;
+
+behavior JoinDirector implements ActorService{
+	private int requiredTokens;
+	private Object[] values;
+	private Vector targetActors;
+	private Vector targetMessages;
+	private Vector targetPositions;
+
+	public JoinDirector(int requiredTokens, Vector targetActors, Vector targetMessages, Vector targetPositions) {
+		this.requiredTokens = requiredTokens;
+		this.targetActors = targetActors;
+		this.targetMessages = targetMessages;
+		this.targetPositions = targetPositions;
+
+		values = new Object[requiredTokens];
+	}
+
+	public void resolveJoinToken(Integer tokenPosition, Object value) {
+		//values[tokenPosition.intValue()] = value;
+		values[requiredTokens-1] = value;
+		requiredTokens--;
+		if (requiredTokens == 0) {
+			for (int i = 0; i < targetActors.size(); i++) {
+				ActorReference target = (ActorReference)targetActors.get(i);
+				String messageId = (String)targetMessages.get(i);
+				Integer position = (Integer)targetPositions.get(i);
+
+				/**
+				 * If the value is a large object, it isn't required to be sent
+				 * if this token is being used for synchronization.  We can send
+				 * null instead.
+				 */
+				Object[] arguments = new Object[3];
+				arguments[0] = messageId;
+				arguments[1] = position;
+				if (position.intValue() == -3) arguments[2] = null;
+				else arguments[2] = values;
+
+				target.send( new Message(self, target, "resolveToken", arguments, null, null) );
+			}
+			this.ServiceDie();
+		}
+	}
+
+}
