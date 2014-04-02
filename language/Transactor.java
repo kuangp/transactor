@@ -33,54 +33,10 @@ import salsa.resources.ActorService;
 
 import java.io.*;
 import java.util.*;
+import gc.*;
 
+// NOTE: The order of execution of worldview modification is important in some methods
 public class Transactor extends UniversalActor  {
-	public static void main(String args[]) {
-		UAN uan = null;
-		UAL ual = null;
-		if (System.getProperty("uan") != null) {
-			uan = new UAN( System.getProperty("uan") );
-			ServiceFactory.getTheater();
-			RunTime.receivedUniversalActor();
-		}
-		if (System.getProperty("ual") != null) {
-			ual = new UAL( System.getProperty("ual") );
-
-			if (uan == null) {
-				System.err.println("Actor Creation Error:");
-				System.err.println("	uan: " + uan);
-				System.err.println("	ual: " + ual);
-				System.err.println("	Identifier: " + System.getProperty("identifier"));
-				System.err.println("	Cannot specify an actor to have a ual at runtime without a uan.");
-				System.err.println("	To give an actor a specific ual at runtime, use the identifier system property.");
-				System.exit(0);
-			}
-			RunTime.receivedUniversalActor();
-		}
-		if (System.getProperty("identifier") != null) {
-			if (ual != null) {
-				System.err.println("Actor Creation Error:");
-				System.err.println("	uan: " + uan);
-				System.err.println("	ual: " + ual);
-				System.err.println("	Identifier: " + System.getProperty("identifier"));
-				System.err.println("	Cannot specify an identifier and a ual with system properties when creating an actor.");
-				System.exit(0);
-			}
-			ual = new UAL( ServiceFactory.getTheater().getLocation() + System.getProperty("identifier"));
-		}
-		RunTime.receivedMessage();
-		Transactor instance = (Transactor)new Transactor(uan, ual,null).construct();
-		gc.WeakReference instanceRef=new gc.WeakReference(uan,ual);
-		{
-			Object[] _arguments = { args };
-
-			//preAct() for local actor creation
-			//act() for remote actor creation
-			if (ual != null && !ual.getLocation().equals(ServiceFactory.getTheater().getLocation())) {instance.send( new Message(instanceRef, instanceRef, "act", _arguments, false) );}
-			else {instance.send( new Message(instanceRef, instanceRef, "preAct", _arguments, false) );}
-		}
-		RunTime.finishedProcessingMessage();
-	}
 
 	public static ActorReference getReferenceByName(UAN uan)	{ return new Transactor(false, uan); }
 	public static ActorReference getReferenceByName(String uan)	{ return Transactor.getReferenceByName(new UAN(uan)); }
@@ -89,90 +45,7 @@ public class Transactor extends UniversalActor  {
 	public static ActorReference getReferenceByLocation(String ual)	{ return Transactor.getReferenceByLocation(new UAL(ual)); }
 	public Transactor(boolean o, UAN __uan)	{ super(false,__uan); }
 	public Transactor(boolean o, UAL __ual)	{ super(false,__ual); }
-	public Transactor(UAN __uan,UniversalActor.State sourceActor)	{ this(__uan, null, sourceActor); }
-	public Transactor(UAL __ual,UniversalActor.State sourceActor)	{ this(null, __ual, sourceActor); }
-	public Transactor(UniversalActor.State sourceActor)		{ this(null, null, sourceActor);  }
 	public Transactor()		{  }
-	public Transactor(UAN __uan, UAL __ual, Object obj) {
-		//decide the type of sourceActor
-		//if obj is null, the actor must be the startup actor.
-		//if obj is an actorReference, this actor is created by a remote actor
-
-		if (obj instanceof UniversalActor.State || obj==null) {
-			  UniversalActor.State sourceActor;
-			  if (obj!=null) { sourceActor=(UniversalActor.State) obj;}
-			  else {sourceActor=null;}
-
-			  //remote creation message sent to a remote system service.
-			  if (__ual != null && !__ual.getLocation().equals(ServiceFactory.getTheater().getLocation())) {
-			    WeakReference sourceRef;
-			    if (sourceActor!=null && sourceActor.getUAL() != null) {sourceRef = new WeakReference(sourceActor.getUAN(),sourceActor.getUAL());}
-			    else {sourceRef = null;}
-			    if (sourceActor != null) {
-			      if (__uan != null) {sourceActor.getActorMemory().getForwardList().putReference(__uan);}
-			      else if (__ual!=null) {sourceActor.getActorMemory().getForwardList().putReference(__ual);}
-
-			      //update the source of this actor reference
-			      setSource(sourceActor.getUAN(), sourceActor.getUAL());
-			      activateGC();
-			    }
-			    createRemotely(__uan, __ual, "transactor.language.Transactor", sourceRef);
-			  }
-
-			  // local creation
-			  else {
-			    State state = new State(__uan, __ual);
-
-			    //assume the reference is weak
-			    muteGC();
-
-			    //the source actor is  the startup actor
-			    if (sourceActor == null) {
-			      state.getActorMemory().getInverseList().putInverseReference("rmsp://me");
-			    }
-
-			    //the souce actor is a normal actor
-			    else if (sourceActor instanceof UniversalActor.State) {
-
-			      // this reference is part of garbage collection
-			      activateGC();
-
-			      //update the source of this actor reference
-			      setSource(sourceActor.getUAN(), sourceActor.getUAL());
-
-			      /* Garbage collection registration:
-			       * register 'this reference' in sourceActor's forward list @
-			       * register 'this reference' in the forward acquaintance's inverse list
-			       */
-			      String inverseRefString=null;
-			      if (sourceActor.getUAN()!=null) {inverseRefString=sourceActor.getUAN().toString();}
-			      else if (sourceActor.getUAL()!=null) {inverseRefString=sourceActor.getUAL().toString();}
-			      if (__uan != null) {sourceActor.getActorMemory().getForwardList().putReference(__uan);}
-			      else if (__ual != null) {sourceActor.getActorMemory().getForwardList().putReference(__ual);}
-			      else {sourceActor.getActorMemory().getForwardList().putReference(state.getUAL());}
-
-			      //put the inverse reference information in the actormemory
-			      if (inverseRefString!=null) state.getActorMemory().getInverseList().putInverseReference(inverseRefString);
-			    }
-			    state.updateSelf(this);
-			    ServiceFactory.getNaming().setEntry(state.getUAN(), state.getUAL(), state);
-			    if (getUAN() != null) ServiceFactory.getNaming().update(state.getUAN(), state.getUAL());
-			  }
-		}
-
-		//creation invoked by a remote message
-		else if (obj instanceof ActorReference) {
-			  ActorReference sourceRef= (ActorReference) obj;
-			  State state = new State(__uan, __ual);
-			  muteGC();
-			  state.getActorMemory().getInverseList().putInverseReference("rmsp://me");
-			  if (sourceRef.getUAN() != null) {state.getActorMemory().getInverseList().putInverseReference(sourceRef.getUAN());}
-			  else if (sourceRef.getUAL() != null) {state.getActorMemory().getInverseList().putInverseReference(sourceRef.getUAL());}
-			  state.updateSelf(this);
-			  ServiceFactory.getNaming().setEntry(state.getUAN(), state.getUAL(),state);
-			  if (getUAN() != null) ServiceFactory.getNaming().update(state.getUAN(), state.getUAL());
-		}
-	}
 
 	public UniversalActor construct (Transactor self) {
 		Object[] __arguments = { self };
@@ -188,14 +61,7 @@ public class Transactor extends UniversalActor  {
 
 	public class State extends UniversalActor .State {
 		public Transactor self;
-		public void updateSelf(ActorReference actorReference) {
-			((Transactor)actorReference).setUAL(getUAL());
-			((Transactor)actorReference).setUAN(getUAN());
-			self = new Transactor(false,getUAL());
-			self.setUAN(getUAN());
-			self.setUAL(getUAL());
-			self.activateGC();
-		}
+		public void updateSelf(ActorReference actorReference) {}
 
 		public State() {
 			this(null, null);
@@ -207,140 +73,128 @@ public class Transactor extends UniversalActor  {
 			addMethodsForClasses();
 		}
 
-		public void process(Message message) {
-			Method[] matches = getMatches(message.getMethodName());
-			Object returnValue = null;
-			Exception exception = null;
+        public void process(Message msg) {}
 
-			if (matches != null) {
-				if (!message.getMethodName().equals("die")) {activateArgsGC(message);}
-				for (int i = 0; i < matches.length; i++) {
-					try {
-						if (matches[i].getParameterTypes().length != message.getArguments().length) continue;
-						returnValue = matches[i].invoke(this, message.getArguments());
-					} catch (Exception e) {
-						if (e.getCause() instanceof CurrentContinuationException) {
-							sendGeneratedMessages();
-							return;
-						} else if (e instanceof InvocationTargetException) {
-							sendGeneratedMessages();
-							exception = (Exception)e.getCause();
-							break;
-						} else {
-							continue;
-						}
-					}
-					sendGeneratedMessages();
-					currentMessage.resolveContinuations(returnValue);
-					return;
-				}
-			}
-
-			System.err.println("Message processing exception:");
-			if (message.getSource() != null) {
-				System.err.println("\tSent by: " + message.getSource().toString());
-			} else System.err.println("\tSent by: unknown");
-			System.err.println("\tReceived by actor: " + toString());
-			System.err.println("\tMessage: " + message.toString());
-			if (exception == null) {
-				if (matches == null) {
-					System.err.println("\tNo methods with the same name found.");
-					return;
-				}
-				System.err.println("\tDid not match any of the following: ");
-				for (int i = 0; i < matches.length; i++) {
-					System.err.print("\t\tMethod: " + matches[i].getName() + "( ");
-					Class[] parTypes = matches[i].getParameterTypes();
-					for (int j = 0; j < parTypes.length; j++) {
-						System.err.print(parTypes[j].getName() + " ");
-					}
-					System.err.println(")");
-				}
-			} else {
-				System.err.println("\tThrew exception: " + exception);
-				exception.printStackTrace();
-			}
-		}
-
-		Worldview wv;
-		String name;
+		private Worldview wv;
+        // Do we need this? or just use UAN/UAL
+		private String name;
+        
+        /* 
+         * Super constructor must be called from subclasses of transactors
+         * Transactor complier would need to insert super(name) into the construct method 
+         * self is needed since subclasses do not override its parents memeber variables 
+         * so we need access to self in these methods
+         */
 		public void construct(Transactor self){
+            // TODO: Create a weak transactor reference instead to not rely on passing up self reference from subclass
+            // Future implementation might want to include wv info for dep passing in Message objects
 			this.self = ((Transactor)self);
-			if (self.getUAN()!=null) {this.name = self.getUAN().toString();
-}			else {this.name = self.getUAL().toString();
-}			wv = new Worldview();
+			if (self.getUAN()!=null) 
+                this.name = self.getUAN().toString();
+			else 
+                this.name = self.getUAL().toString();
+			wv = new Worldview();
 			HashMap new_histMap = new HashMap();
 			new_histMap.put(name, new History());
 			wv.setHistMap(new_histMap);
+            this.setWV(wv);
 		}
+        
+        /* 
+         * For instantiating the Transactor class without subclassing
+         * This construct should not be used
+         */
 		public void construct(){
-			if (self.getUAN()!=null) {this.name = self.getUAN().toString();
-}			else {this.name = self.getUAL().toString();
-}			wv = new Worldview();
+			if (self.getUAN()!=null) 
+                this.name = self.getUAN().toString();
+			else 
+                this.name = self.getUAL().toString();
+			wv = new Worldview();
 			HashMap new_histMap = new HashMap();
 			new_histMap.put(name, new History());
 			wv.setHistMap(new_histMap);
 		}
+
 		public void setWV(Worldview wv) {
 			this.wv = wv;
 		}
+
+        /*
+         * recvMsg resolves Worldview dependencies before passing message into mailbox
+         */
 		public void recvMsg(Message msg, Worldview msg_wv) {
 			Worldview union = wv.union(msg_wv);
 			HashSet current = new HashSet();
 			current.add(name);
-			if (union.invalidates(wv.getHistMap(), current)) {{
-				if (wv.getHistMap().get(name).isPersistent()) {{
-					this.rollback(true);
+			if (union.invalidates(wv.getHistMap(), current)) {
+				if (wv.getHistMap().get(name).isPersistent()) {
+					
+                    System.out.println("roll back cause of dep\n\n");
 					Worldview new_wv = new Worldview();
 					HashMap new_histMap = new HashMap();
 					new_histMap.put(name, union.getHistMap().get(name));
 					new_wv.setHistMap(new_histMap);
-					{
-						Token token_4_0 = new Token();
-						// ((Transactor)self)<-setWV(new_wv)
-						{
-							Object _arguments[] = { new_wv };
-							Message message = new Message( self, ((Transactor)self), "setWV", _arguments, null, token_4_0 );
-							Object[] _propertyInfo = {  };
-							message.setProperty( "priority", _propertyInfo );
-							__messages.add( message );
-						}
-						// recvMsg(msg, msg_wv)
-						{
-							Object _arguments[] = { msg, msg_wv };
-							Message message = new Message( self, self, "recvMsg", _arguments, token_4_0, null );
-							__messages.add( message );
-						}
-					}
+
+					this.rollback(true, new_wv);
+                    if (isDestroyed())
+                        return;
+                   
+                    // Message remains and resend to recheck dependencies
+                    // recvMsg(msg, msg_wv)
+                    Object args[] = { msg, msg_wv };
+                    Message pass_msg = new Message( self, self, "recvMsg", args, null, null, false );
+                    self.send(pass_msg);
 				}
-}				else {{
+				else {
 					this.destroy();
 				}
-}			}
-}			else {if (union.invalidates(msg_wv.getHistMap(), msg_wv.getRootSet())) {{
-				wv = union;
-				wv.setRootSet(new HashSet());
 			}
-}			else {{
+			else if (union.invalidates(msg_wv.getHistMap(), msg_wv.getRootSet())) {
+                wv = union;
+                System.out.println("message invalidated~~~~~~~~~~~~\n"+msg+"\n");
+                System.out.println("message wv: \n" + msg_wv + "\n\n");
+                // Message is invalidate so we send ack and ignore
+                responseAck(msg);
+                wv.setRootSet(new HashSet());
+			}
+			else {
 				wv = union;
+                //System.out.println("Got msg: " + msg + "\n\n");
+                // TODO: Put in beginning of mailbox
+                // Salsa priority bug?
 				self.send(msg);
 			}
-}}		}
-		public void sendMsg(String method, Object[] params, Transactor recipient) {
-			{
-				// recipient<-recvMsg(new Message(((Transactor)self), recipient, method, params, null, null), this.wv)
-				{
-					Object _arguments[] = { new Message(((Transactor)self), recipient, method, params, null, null), this.wv };
-					Message message = new Message( self, recipient, "recvMsg", _arguments, null, null );
-					__messages.add( message );
-				}
-			}
 		}
+
+        /*
+         * sendMsg calls recvMsg of recipient with msg and wv arguements
+         * Continuation might be able to handled internally in Message object 
+         */
+		public void sendMsg(String method, Object[] params, Transactor recipient) {
+			Message msg = new Message(self, recipient, method, params, null, null);
+			Object[] msg_property = new Object[0];
+			msg.setProperty("priority", msg_property);
+            // recipient<-recvMsg(msg, this.wv)
+            Object args[] = { msg, this.wv };
+            Message recvMsg = new Message( self, recipient, "recvMsg", args, null, null );
+            //System.out.println("Sending msg: " + msg + "\n\n");
+            __messages.add(recvMsg);
+		}
+        
+        /* 
+         * newTActor -> returns new Transactor with dependencies set of parent and child 
+         * adds new t to histMap for both
+         * adds t to root set of parent
+         * sets depGraph to t dependent on parents root set plus parent
+         * Should be called as such .newTActor(new [Transactor Class]([args]))
+         */
 		public Transactor newTActor(Transactor new_T) {
 			String new_name;
-			if (new_T.getUAN()!=null) {new_name = new_T.getUAN().toString();
-}			else {new_name = new_T.getUAL().toString();
-}			wv.getHistMap().put(new_name, new History());
+			if (new_T.getUAN()!=null) 
+                new_name = new_T.getUAN().toString();
+			else 
+                new_name = new_T.getUAL().toString();
+			wv.getHistMap().put(new_name, new History());
 			wv.getDepGraph().put(new_name, new HashSet());
 			wv.getDepGraph().get(new_name).add(name);
 			Iterator i = wv.getRootSet().iterator();
@@ -349,31 +203,57 @@ public class Transactor extends UniversalActor  {
 			}
 			wv.getRootSet().add(new_name);
 			Worldview new_wv = new Worldview(wv.getHistMap(), wv.getDepGraph(), new HashSet());
-			{
-				// new_T<-setWV(new_wv)
-				{
-					Object _arguments[] = { new_wv };
-					Message message = new Message( self, new_T, "setWV", _arguments, null, null );
-					Object[] _propertyInfo = {  };
-					message.setProperty( "priority", _propertyInfo );
-					__messages.add( message );
-				}
-			}
+            // new_T<-setWV(new_wv)
+            Object args[] = { new_wv };
+            Message msg = new Message( self, new_T, "setWV", args, null, null );
+            Object[] propInfo = {  };
+            msg.setProperty( "priority", propInfo );
+            new_T.send(msg);
+
 			return new_T;
 		}
+
 		public void stabilize() {
 			wv.getHistMap().get(name).stabilize();
+            // TODO: Save stable state
+            // stable and checkpointed saved states would need to be seperate
+            // when reloading we reload last saved state (stable or checkpoint) if suddent failure
+            // we reload last checkpoint only on normal run time rollback
+            // need to determine most recent saved state (stable/checkpoint) to load upon recovery from failure
+            // how to recover from failure?
+            // on system start, each transactor check for saved state?
 		}
+
 		public boolean dependent() {
 			return !wv.independent(name);
 		}
+
+        // TODO: extend with USL and ftp protocol with better filenaming scheme
 		public void checkpoint() {
-			if (!dependent()&&wv.getHistMap().get(name).isStable()) {{
+			if (!dependent()&&wv.getHistMap().get(name).isStable()) {
 				wv.getHistMap().get(name).checkpoint();
 				HashMap new_histMap = new HashMap();
 				new_histMap.put(name, wv.getHistMap().get(name));
 				wv = new Worldview();
 				wv.setHistMap(new_histMap);
+
+                // Empty mailboxes so we don't stored messages with state
+                Vector temp_mailbox = mailbox;
+                Hashtable temp_pendingMessages = pendingMessages;
+                Vector temp_unresolvedTokens = unresolvedTokens;
+                mailbox = new Vector();
+                pendingMessages = new Hashtable();
+                unresolvedTokens = new Vector();
+                /* 
+                UAN myUAN = getUAN();
+                UAL myUAL = getUAL();
+
+                // Add "_saved" suffixes for appropriate state reloading to avoid conflicts with placeholder during rollback
+                // Any loading of saved state needs to remove pre/suffixes to restore uan/ual
+                if (myUAN != null)
+                    setUAN(new UAN(myUAN.toString() + "_saved"));
+                setUAL(new UAL(myUAL.toString() + "_saved"));
+                */
 				try {
 					FileOutputStream fileOut = new FileOutputStream("./"+name.charAt(name.length()-1)+".ser");
 					ObjectOutputStream out = new ObjectOutputStream(fileOut);
@@ -384,71 +264,170 @@ public class Transactor extends UniversalActor  {
 				catch (IOException e) {
 					e.printStackTrace();
 				}
-
+                
+                // Place messages back in mailboxes
+                mailbox.addAll(temp_mailbox);
+                pendingMessages.putAll(temp_pendingMessages);
+                unresolvedTokens.addAll(temp_unresolvedTokens);
+                
+                //setUAN(myUAN);
+                //setUAL(myUAL);
+                
 			}
-}			else {{
+			else {
 				wv.setRootSet(new HashSet());
 			}
-}		}
+		}
+
 		public Transactor self() {
 			this.getTState();
 			return ((Transactor)self);
 		}
-		public void rollback(boolean force) {
-			if (!wv.getHistMap().get(name).isStable()||force) {{
-				if (wv.getHistMap().get(name).isPersistent()) {{
-					Transactor.State saved;
+/*
+        public void finishRollback(Worldview new_wv, Vector new_mailbox, Hashtable new_pendingMessages, Vector new_unresolvedTokens) {
+            this.wv = new_wv;
+            this.mailbox = new_mailbox;
+            this.pendingMessages = new_pendingMessages;
+            this.unresolvedTokens = new_unresolvedTokens;
+            UAN tempUAN = getUAN();
+            UAL tempUAL = getUAL();
+            ServiceFactory.getNaming().remove(tempUAN, tempUAL);
+            ServiceFactory.getNaming().delete(tempUAN);
+            ServiceFactory.getTheater().removeSecurityEntry(tempUAN.toString());
+            if (tempUAN != null)
+                // Removing the "_saved" suffix
+                setUAN(new UAN(tempUAN.toString().substring(0, tempUAN.toString().length()-6)));
+            setUAL(new UAL(tempUAL.toString().substring(0, tempUAL.toString().length()-6)));
+            UAN restoredUAN = getUAN();
+            UAL restoredUAL = getUAL();
+            Actor removed = ServiceFactory.getNaming().remove(restoredUAN, restoredUAL);
+            RunTime.deletedUniversalActor();
+            ServiceFactory.getNaming().setEntry(restoredUAN, restoredUAL, (Actor)this);
+            if (restoredUAN != null){
+                ServiceFactory.getTheater().registerSecurityEntry(restoredUAN.toString());
+                ServiceFactory.getNaming().update(restoredUAN, restoredUAL);
+            }
+            if (removed instanceof Rollbackholder)
+                ((Rollbackholder)removed).sendAllMessages();
+        }
+*/
+
+        /* 
+         * False: Programatic rollback
+         * True: Dependency rollback
+         * TODO: extend with USL and filename scheme
+         */
+		public void rollback(boolean force, Worldview updatedWV) {
+			if (!wv.getHistMap().get(name).isStable()||force) {
+				if (wv.getHistMap().get(name).isPersistent()) {
+                    System.out.println(self + ": rolling back...........");
+                   
+                    // We need to send out previous messages first to carry on current worldview before a rollback
+                    sendGeneratedMessages();
+
+                    // Create a placeholder to collect messages while the transactor is in the process of rolling back
+                    UAN savedUAN = getUAN();
+                    UAL savedUAL = getUAL();
+                    ServiceFactory.getNaming().setEntry(savedUAN, savedUAL, new Rollbackholder(savedUAN, savedUAL));
+                    SystemService localSystem = ServiceFactory.getSystem();
+                  
 					wv.getHistMap().get(name).rollback();
 					HashMap new_histMap = new HashMap();
 					new_histMap.put(name, wv.getHistMap().get(name));
 					Worldview new_wv = new Worldview();
 					new_wv.setHistMap(new_histMap);
+
+                    if (updatedWV != null)
+                        new_wv = updatedWV;
+
 					try {
 						FileInputStream fileIn = new FileInputStream("./"+name.charAt(name.length()-1)+".ser");
-						ObjectInputStream in = new ObjectInputStream(fileIn);
-						saved = (Transactor.State)in.readObject();
-						saved.mailbox = (Vector)this.mailbox.clone();
-						saved.setWV(new_wv);
-						in.close();
+						ByteArrayOutputStream bos = new ByteArrayOutputStream();
+						byte[] buffer = new byte[1024];
+						int readbytes = fileIn.read(buffer);
+						while (readbytes!=-1) {
+							bos.write(buffer, 0, readbytes);
+							readbytes = fileIn.read(buffer);
+						}
+						byte[] savedState = bos.toByteArray();
 						fileIn.close();
-						ServiceFactory.getNaming().setEntry(saved.getUAN(), saved.getUAL(), saved);
-						if (getUAN()!=null) {ServiceFactory.getNaming().update(saved.getUAN(), saved.getUAL());
-}						saved.start();
+                        
+                        ActorMemory mem = getActorMemory();
+                        Object[] reloadArgs = { savedState, new_wv, mailbox, pendingMessages, unresolvedTokens, mem };
+                        Message reloadMsg = new Message(self, localSystem, "reloadTransactor", reloadArgs, null, null, false);
+                        localSystem.send(reloadMsg);
+                        /* 
+                        WeakReference savedStateRef;
+                        if (savedUAN != null) {
+                            savedStateRef = new WeakReference(new UAN(savedUAN.toString() + "_saved"), new UAL(savedUAL.toString() + "_saved"));
+                        }
+                        else {
+                            savedStateRef = new WeakReference(null, new UAL(savedUAL.toString() + "_saved"));
+                        }
+                        Object savedRef = null;
+                        // Waits until saved state is reloaded
+                        while (savedRef == null) {
+                            savedRef = ServiceFactory.getNaming().getTarget(savedStateRef);
+                        }
+                        
+                        Object[] finishRollbackArgs = { new_wv, mailbox, pendingMessages, unresolvedTokens };
+                        Message finishRollbackMsg = new Message(self, savedRef, "finishRollback", finishRollbackArgs, token1, null, false);
+                        ((UniversalActor)savedRef).send(finishRollbackMsg);
+                        */
+                        
+                        this.forceAllRefSilent();
+                        // This stops this states thread to cause this actor to "die" 
+                        // TODO: Implement a new indicator for rollbacking transactors in salsa
+                        // maybe we can just override run() and live() and add a rolledback boolean to check for
+                        this.rollingback = true;
 					}
 					catch (IOException i) {
 						i.printStackTrace();
 						return;
 					}
-					catch (ClassNotFoundException c) {
-						c.printStackTrace();
-						return;
-					}
 
 				}
-}				else {{
+				else {
 					this.destroy();
+                    // Messages after a rollback is theoretically illegal...
+                    __messages.clear();
 				}
-}			}
-}			else {{
+			}
+			else {
 				wv.setRootSet(new HashSet());
 			}
-}		}
+		}
+
 		public String getString() {
 			return name+" -> "+wv.getHistMap().get(name).toString()+"\n"+wv.toString();
 		}
+
+        /* 
+         * how to handle static member variables? serialize them?
+         * if one transactor sets it how do others see dependency? 
+         * one can checkpoint/set state because of static content set by other 
+         * and other rollback but wont be recognized cause no dep
+         * if self is seperately contained, can we access direct members in subclass state?
+         * compiler syntax for setting state?
+         */
 		public boolean setTState() {
-			if (!wv.getHistMap().get(name).isStable()) {{
-				if (!wv.getDepGraph().containsKey(name)) {{
+			if (!wv.getHistMap().get(name).isStable()) {
+				if (!wv.getDepGraph().containsKey(name)) {
 					wv.getDepGraph().put(name, new HashSet());
 				}
-}				Iterator i = wv.getRootSet().iterator();
+				Iterator i = wv.getRootSet().iterator();
 				while (i.hasNext()) {
 					wv.getDepGraph().get(name).add((String)i.next());
 				}
 				return true;
 			}
-}			return false;
+			return false;
 		}
+        
+        /*
+         * cannot orride getState() of Thread Class
+         * need to handle member variables retrieval 
+         */
 		public Object getTState() {
 			wv.getRootSet().add(name);
 			return null;

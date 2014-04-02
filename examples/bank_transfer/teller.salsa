@@ -40,8 +40,8 @@ behavior teller extends Transactor {
             this.sendMsg("pingreq", p2, inacct);
             Transactor t = this.self();
             Object[] p3 = {t};
-            this.sendMsg("pingreq", p3, outacct);
             this.sendMsg("pingreq", p3, inacct);
+            this.sendMsg("pingreq", p3, outacct);
         }
     }
 

@@ -295,14 +295,14 @@ public class teller extends Transactor {
 			this.setTState();
 			if (acks==2) {{
 				this.stabilize();
+				Transactor t = this.self();
+				Object[] p3 = { t };
+				this.sendMsg("pingreq", p3, inacct);
+				this.sendMsg("pingreq", p3, outacct);
 				Object[] p1 = { inacct };
 				Object[] p2 = { outacct };
 				this.sendMsg("pingreq", p1, outacct);
 				this.sendMsg("pingreq", p2, inacct);
-				Transactor t = this.self();
-				Object[] p3 = { t };
-				this.sendMsg("pingreq", p3, outacct);
-				this.sendMsg("pingreq", p3, inacct);
 			}
 }		}
 		public void ping() {

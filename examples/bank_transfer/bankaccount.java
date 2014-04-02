@@ -279,7 +279,7 @@ public class bankaccount extends Transactor {
 				response[0] = "Not enough funds!";
 				this.getTState();
 				this.sendMsg("done", response, atm);
-				this.rollback(false);
+				this.rollback(false, null);
 			}
 }			else {{
 				this.stabilize();
@@ -294,9 +294,10 @@ public class bankaccount extends Transactor {
 		public void ping() {
 			this.checkpoint();
 		}
-		public void printData() {
+		public String printData() {
 			System.out.println("Balance: "+bal);
 			System.out.println(this.getString());
+			return "Balance: "+bal+"\n"+this.getString();
 		}
 	}
 }
