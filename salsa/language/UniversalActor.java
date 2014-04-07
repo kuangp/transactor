@@ -760,15 +760,24 @@ public abstract class State extends Thread implements Actor, java.io.Serializabl
 			}
 		} else {
 			if (message.getMethodName().equals("construct") || (message.getProperty() != null && message.getProperty().equals("priority"))) {
+                /******* Transactor support ******/
+                if (message.getProperty() != null && message.getProperty().equals("priority") && message.getPropertyParameters() != null && ((String)message.getPropertyParameters()[0]).equals("highPriority")) {
+                    // This makes sure this message is processed next after a Transactor evaluates the message dependencies in recvMsg
+                    // or sets its WV after new transactor creation
+                    mailbox.insertElementAt(message, 0);
+                    /*********************************/
+                }
+                else {
 
-				//This makes sure that the message doesn't preceeed messages with high priority
-                                if(mailbox.size()!=0){
-                                        int i = 0;
-                                        while( i<mailbox.size() && (message.getProperty() != null && message.getProperty().equals("priority"))) i++;
-                                        mailbox.insertElementAt(message, i);
-                                }
-                                else
-                                        mailbox.insertElementAt(message, 0);
+                    //This makes sure that the message doesn't preceeed messages with high priority
+                    if(mailbox.size()!=0){
+                        int i = 0;
+                        while( i<mailbox.size() && (((Message)mailbox.get(i)).getProperty() != null && ((Message)mailbox.get(i)).getProperty().equals("priority"))) i++;
+                        mailbox.insertElementAt(message, i);
+                    }
+                    else
+                        mailbox.insertElementAt(message, 0);
+                }
 
 			} else {
 				mailbox.addElement(message);

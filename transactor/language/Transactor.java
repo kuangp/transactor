@@ -76,20 +76,25 @@ public class Transactor extends UniversalActor  {
         public void process(Message msg) {}
 
 		private Worldview wv;
-        // Do we need this? or just use UAN/UAL
+        // We can use Self 
+        // if we use self to bundle the UAN and UAL, then we need to create a custom equals() for WV mapping
+        // Migration must have UAN which should not change, so UAL should not change for annoynomous actor
+        // Therefore we don't have to worry about change of name unless it is possible to change UAN
 		private String name;
         
         /* 
          * Super constructor must be called from subclasses of transactors
-         * Transactor complier would need to insert super(name) into the construct method 
-         * self is needed since subclasses do not override its parents memeber variables 
+         * Transactor complier would need to insert super(self) into the construct method or create a noargs construct is none is found 
+         * self is needed since subclasses overrides its parents memeber variables and hides it from the parent
          * so we need access to self in these methods
          */
 		public void construct(Transactor self){
-            // TODO: Create a weak transactor reference instead to not rely on passing up self reference from subclass
             // Future implementation might want to include wv info for dep passing in Message objects
-			this.self = ((Transactor)self);
-			if (self.getUAN()!=null) 
+            // -> When sending messages the source transactor would carry it's WV as a member variable we can check against
+            // ->-> but wv needs to updated with self everything it is changed, self is meant to just be a reference so we want to pass wv into the message object instead of packaging it with self
+            // How is self updated when migrating in SALSA?
+			this.self = self;
+			if (self.getUAN() != null) 
                 this.name = self.getUAN().toString();
 			else 
                 this.name = self.getUAL().toString();
@@ -99,22 +104,11 @@ public class Transactor extends UniversalActor  {
 			wv.setHistMap(new_histMap);
             this.setWV(wv);
 		}
+    
+        // NOTE: Compiler needs to insert default no args contructor to subclass if none found to call super construct(self)
+        // This constructor is unused...
+        public void construct() {}
         
-        /* 
-         * For instantiating the Transactor class without subclassing
-         * This construct should not be used
-         */
-		public void construct(){
-			if (self.getUAN()!=null) 
-                this.name = self.getUAN().toString();
-			else 
-                this.name = self.getUAL().toString();
-			wv = new Worldview();
-			HashMap new_histMap = new HashMap();
-			new_histMap.put(name, new History());
-			wv.setHistMap(new_histMap);
-		}
-
 		public void setWV(Worldview wv) {
 			this.wv = wv;
 		}
@@ -123,58 +117,75 @@ public class Transactor extends UniversalActor  {
          * recvMsg resolves Worldview dependencies before passing message into mailbox
          */
 		public void recvMsg(Message msg, Worldview msg_wv) {
+            //System.out.println("Current mailbox for " + name + " : \n" + mailbox + "\n");
+            //System.out.println("next msg for " + name + " : \n" + msg + "\n");
 			Worldview union = wv.union(msg_wv);
 			HashSet current = new HashSet();
 			current.add(name);
 			if (union.invalidates(wv.getHistMap(), current)) {
+                /*** [rcv3] ***/
 				if (wv.getHistMap().get(name).isPersistent()) {
 					
-                    System.out.println("roll back cause of dep\n\n");
+                    //System.out.println("roll back cause of dep\n\n");
 					Worldview new_wv = new Worldview();
 					HashMap new_histMap = new HashMap();
 					new_histMap.put(name, union.getHistMap().get(name));
 					new_wv.setHistMap(new_histMap);
 
-					this.rollback(true, new_wv);
-                    if (isDestroyed())
-                        return;
-                   
                     // Message remains and resend to recheck dependencies
-                    // recvMsg(msg, msg_wv)
+                    // self<-recvMsg(msg, msg_wv)
                     Object args[] = { msg, msg_wv };
                     Message pass_msg = new Message( self, self, "recvMsg", args, null, null, false );
                     self.send(pass_msg);
+
+                    // rollback should be last call since no calls after should be processed
+					this.rollback(true, new_wv);
+                    //if (isDestroyed())
+                     //   return;
+                   
 				}
+                /*** [rcv4] ***/
 				else {
 					this.destroy();
 				}
 			}
+            /*** [rcv2] ***/
 			else if (union.invalidates(msg_wv.getHistMap(), msg_wv.getRootSet())) {
-                wv = union;
-                System.out.println("message invalidated~~~~~~~~~~~~\n"+msg+"\n");
-                System.out.println("message wv: \n" + msg_wv + "\n\n");
                 // Message is invalidate so we send ack and ignore
                 responseAck(msg);
+                wv = union;
                 wv.setRootSet(new HashSet());
+                //System.out.println("message invalidated~~~~~~~~~~~~\n"+msg+"\n");
+                //System.out.println("message wv: \n" + msg_wv + "\n\n");
 			}
+            /*** [rcv1] ***/
 			else {
 				wv = union;
                 //System.out.println("Got msg: " + msg + "\n\n");
-                // TODO: Put in beginning of mailbox
-                // Salsa priority bug?
 				self.send(msg);
 			}
+            //System.out.println("after mailbox for " + name + " : \n" + mailbox + "\n");
 		}
 
         /*
          * sendMsg calls recvMsg of recipient with msg and wv arguements
          * Continuation might be able to handled internally in Message object 
          */
+        /*** [snd] ***/
+        // NOTE: We need sendMsg to be sequential since we need to track wv sequentially by the message 
+        // send in here is concurrent to follow the actor model 
 		public void sendMsg(String method, Object[] params, Transactor recipient) {
+            // Create the Message
 			Message msg = new Message(self, recipient, method, params, null, null);
-			Object[] msg_property = new Object[0];
+            // Need to set property to ensure message is processed next after recvMsg is processed
+			Object[] msg_property = {"highPriority"};
 			msg.setProperty("priority", msg_property);
+            //System.out.println("this is a msg:\n" + (String)msg.getPropertyParameters()[0]);
             // recipient<-recvMsg(msg, this.wv)
+            
+            // Reference splitting in Message initialization prevents local object reference sharing
+            // so we capture the current Worldview at this instance, 
+            // therefore worldview modifications after this call will not be reflected
             Object args[] = { msg, this.wv };
             Message recvMsg = new Message( self, recipient, "recvMsg", args, null, null );
             //System.out.println("Sending msg: " + msg + "\n\n");
@@ -183,36 +194,39 @@ public class Transactor extends UniversalActor  {
         
         /* 
          * newTActor -> returns new Transactor with dependencies set of parent and child 
-         * adds new t to histMap for both
-         * adds t to root set of parent
-         * sets depGraph to t dependent on parents root set plus parent
-         * Should be called as such .newTActor(new [Transactor Class]([args]))
+         * Should be called as such:
+         * [Transactor Class] [name] = (Transactor Class) this.newTActor(new [Transactor Class]([args]))
          */
+        /*** [new] ***/
 		public Transactor newTActor(Transactor new_T) {
 			String new_name;
 			if (new_T.getUAN()!=null) 
                 new_name = new_T.getUAN().toString();
 			else 
                 new_name = new_T.getUAL().toString();
+            // adds new t to histMap for both
 			wv.getHistMap().put(new_name, new History());
+            // sets depGraph to t dependent on parents root set plus parent
 			wv.getDepGraph().put(new_name, new HashSet());
 			wv.getDepGraph().get(new_name).add(name);
 			Iterator i = wv.getRootSet().iterator();
 			while (i.hasNext()) {
 				wv.getDepGraph().get(new_name).add((String)i.next());
 			}
+            // adds t to root set of parent
 			wv.getRootSet().add(new_name);
 			Worldview new_wv = new Worldview(wv.getHistMap(), wv.getDepGraph(), new HashSet());
             // new_T<-setWV(new_wv)
             Object args[] = { new_wv };
             Message msg = new Message( self, new_T, "setWV", args, null, null );
-            Object[] propInfo = {  };
+            Object[] propInfo = {"highPriority"};
             msg.setProperty( "priority", propInfo );
             new_T.send(msg);
 
 			return new_T;
 		}
 
+        /*** [sta1], [sta2] ***/
 		public void stabilize() {
 			wv.getHistMap().get(name).stabilize();
             // TODO: Save stable state
@@ -224,36 +238,34 @@ public class Transactor extends UniversalActor  {
             // on system start, each transactor check for saved state?
 		}
 
+        /*** [dep1], [dep2] ***/
 		public boolean dependent() {
 			return !wv.independent(name);
 		}
 
         // TODO: extend with USL and ftp protocol with better filenaming scheme
 		public void checkpoint() {
+            // If this Transactor is stable 
 			if (!dependent()&&wv.getHistMap().get(name).isStable()) {
+                /*** [chk1] ***/
+                // Update this history to indicate checkpoint
 				wv.getHistMap().get(name).checkpoint();
 				HashMap new_histMap = new HashMap();
 				new_histMap.put(name, wv.getHistMap().get(name));
 				wv = new Worldview();
+                // Reset Dep Graph and Root Set 
 				wv.setHistMap(new_histMap);
 
                 // Empty mailboxes so we don't stored messages with state
+                // Do we want to keep these to restart the network on node failures? 
                 Vector temp_mailbox = mailbox;
                 Hashtable temp_pendingMessages = pendingMessages;
                 Vector temp_unresolvedTokens = unresolvedTokens;
                 mailbox = new Vector();
                 pendingMessages = new Hashtable();
                 unresolvedTokens = new Vector();
-                /* 
-                UAN myUAN = getUAN();
-                UAL myUAL = getUAL();
 
-                // Add "_saved" suffixes for appropriate state reloading to avoid conflicts with placeholder during rollback
-                // Any loading of saved state needs to remove pre/suffixes to restore uan/ual
-                if (myUAN != null)
-                    setUAN(new UAN(myUAN.toString() + "_saved"));
-                setUAL(new UAL(myUAL.toString() + "_saved"));
-                */
+                // Serialize our state to local storage
 				try {
 					FileOutputStream fileOut = new FileOutputStream("./"+name.charAt(name.length()-1)+".ser");
 					ObjectOutputStream out = new ObjectOutputStream(fileOut);
@@ -266,77 +278,57 @@ public class Transactor extends UniversalActor  {
 				}
                 
                 // Place messages back in mailboxes
+                // NOTE: We should end processing of the current message after checkpoint completes
+                //       The messages in the mailbox should process as usual 
                 mailbox.addAll(temp_mailbox);
                 pendingMessages.putAll(temp_pendingMessages);
                 unresolvedTokens.addAll(temp_unresolvedTokens);
                 
-                //setUAN(myUAN);
-                //setUAL(myUAL);
-                
 			}
 			else {
+                /*** [chk2] ***/
+                // If we are not stable then empty our root set and stop processing of current message
 				wv.setRootSet(new HashSet());
 			}
+            // TODO: End parent method here to transition to ready state
+            // transactor complier should compile checkpoint; => this.checkpoint(); return;
 		}
 
+        /*** [self] ***/
 		public Transactor self() {
 			this.getTState();
 			return ((Transactor)self);
 		}
-/*
-        public void finishRollback(Worldview new_wv, Vector new_mailbox, Hashtable new_pendingMessages, Vector new_unresolvedTokens) {
-            this.wv = new_wv;
-            this.mailbox = new_mailbox;
-            this.pendingMessages = new_pendingMessages;
-            this.unresolvedTokens = new_unresolvedTokens;
-            UAN tempUAN = getUAN();
-            UAL tempUAL = getUAL();
-            ServiceFactory.getNaming().remove(tempUAN, tempUAL);
-            ServiceFactory.getNaming().delete(tempUAN);
-            ServiceFactory.getTheater().removeSecurityEntry(tempUAN.toString());
-            if (tempUAN != null)
-                // Removing the "_saved" suffix
-                setUAN(new UAN(tempUAN.toString().substring(0, tempUAN.toString().length()-6)));
-            setUAL(new UAL(tempUAL.toString().substring(0, tempUAL.toString().length()-6)));
-            UAN restoredUAN = getUAN();
-            UAL restoredUAL = getUAL();
-            Actor removed = ServiceFactory.getNaming().remove(restoredUAN, restoredUAL);
-            RunTime.deletedUniversalActor();
-            ServiceFactory.getNaming().setEntry(restoredUAN, restoredUAL, (Actor)this);
-            if (restoredUAN != null){
-                ServiceFactory.getTheater().registerSecurityEntry(restoredUAN.toString());
-                ServiceFactory.getNaming().update(restoredUAN, restoredUAL);
-            }
-            if (removed instanceof Rollbackholder)
-                ((Rollbackholder)removed).sendAllMessages();
-        }
-*/
 
         /* 
-         * False: Programatic rollback
-         * True: Dependency rollback
+         * Force - False: Programatic rollback
+         *         True: Dependency rollback
          * TODO: extend with USL and filename scheme
          */
 		public void rollback(boolean force, Worldview updatedWV) {
 			if (!wv.getHistMap().get(name).isStable()||force) {
+                /*** [rol2] ***/
 				if (wv.getHistMap().get(name).isPersistent()) {
-                    System.out.println(self + ": rolling back...........");
+                    //System.out.println(self + ": rolling back...........");
                    
                     // We need to send out previous messages first to carry on current worldview before a rollback
-                    sendGeneratedMessages();
+                    //sendGeneratedMessages(); // End message instead and let process send them, msg init takes care of wv snapshot
 
                     // Create a placeholder to collect messages while the transactor is in the process of rolling back
                     UAN savedUAN = getUAN();
                     UAL savedUAL = getUAL();
                     ServiceFactory.getNaming().setEntry(savedUAN, savedUAL, new Rollbackholder(savedUAN, savedUAL));
                     SystemService localSystem = ServiceFactory.getSystem();
-                  
+                 
+                    // Rollback current history and set to rollbacked state 
+                    // History needs to be set each time on rollback to track multiple rollbacks to increment incarnation
 					wv.getHistMap().get(name).rollback();
 					HashMap new_histMap = new HashMap();
 					new_histMap.put(name, wv.getHistMap().get(name));
 					Worldview new_wv = new Worldview();
 					new_wv.setHistMap(new_histMap);
 
+                    // For updating WV from dependency invalidation of received message
                     if (updatedWV != null)
                         new_wv = updatedWV;
 
@@ -345,6 +337,7 @@ public class Transactor extends UniversalActor  {
 						ByteArrayOutputStream bos = new ByteArrayOutputStream();
 						byte[] buffer = new byte[1024];
 						int readbytes = fileIn.read(buffer);
+                        // Convert to byte array to send state to system for creation
 						while (readbytes!=-1) {
 							bos.write(buffer, 0, readbytes);
 							readbytes = fileIn.read(buffer);
@@ -356,29 +349,11 @@ public class Transactor extends UniversalActor  {
                         Object[] reloadArgs = { savedState, new_wv, mailbox, pendingMessages, unresolvedTokens, mem };
                         Message reloadMsg = new Message(self, localSystem, "reloadTransactor", reloadArgs, null, null, false);
                         localSystem.send(reloadMsg);
-                        /* 
-                        WeakReference savedStateRef;
-                        if (savedUAN != null) {
-                            savedStateRef = new WeakReference(new UAN(savedUAN.toString() + "_saved"), new UAL(savedUAL.toString() + "_saved"));
-                        }
-                        else {
-                            savedStateRef = new WeakReference(null, new UAL(savedUAL.toString() + "_saved"));
-                        }
-                        Object savedRef = null;
-                        // Waits until saved state is reloaded
-                        while (savedRef == null) {
-                            savedRef = ServiceFactory.getNaming().getTarget(savedStateRef);
-                        }
-                        
-                        Object[] finishRollbackArgs = { new_wv, mailbox, pendingMessages, unresolvedTokens };
-                        Message finishRollbackMsg = new Message(self, savedRef, "finishRollback", finishRollbackArgs, token1, null, false);
-                        ((UniversalActor)savedRef).send(finishRollbackMsg);
-                        */
-                        
+                       
+                        // For GC purposes, full GC may not be supported or function correctly
                         this.forceAllRefSilent();
+
                         // This stops this states thread to cause this actor to "die" 
-                        // TODO: Implement a new indicator for rollbacking transactors in salsa
-                        // maybe we can just override run() and live() and add a rolledback boolean to check for
                         this.rollingback = true;
 					}
 					catch (IOException i) {
@@ -387,15 +362,21 @@ public class Transactor extends UniversalActor  {
 					}
 
 				}
+                /*** [rol3] ***/
 				else {
 					this.destroy();
                     // Messages after a rollback is theoretically illegal...
-                    __messages.clear();
+                    // We don't want to clear __messages because messages before annihilation should be sent out
+                    // those occuring after shouldn't not be sent
+                    // we need a way to end the parent method that invokes rollback 
+                    //__messages.clear();
 				}
 			}
 			else {
+                /*** [rol1] ***/
 				wv.setRootSet(new HashSet());
 			}
+            // TODO: End parent method to transition to ready state at the end of rollback
 		}
 
 		public String getString() {
@@ -406,12 +387,13 @@ public class Transactor extends UniversalActor  {
          * how to handle static member variables? serialize them?
          * if one transactor sets it how do others see dependency? 
          * one can checkpoint/set state because of static content set by other 
-         * and other rollback but wont be recognized cause no dep
+         * and other rollback but wont be recognized cause no dep -> static members are not allowed in SALSA
          * if self is seperately contained, can we access direct members in subclass state?
          * compiler syntax for setting state?
          */
 		public boolean setTState() {
 			if (!wv.getHistMap().get(name).isStable()) {
+                /*** [set1] ***/
 				if (!wv.getDepGraph().containsKey(name)) {
 					wv.getDepGraph().put(name, new HashSet());
 				}
@@ -421,13 +403,14 @@ public class Transactor extends UniversalActor  {
 				}
 				return true;
 			}
+            /*** [set2] ***/
 			return false;
 		}
         
         /*
-         * cannot orride getState() of Thread Class
-         * need to handle member variables retrieval 
+         * Need to handle member variable retrieval 
          */
+        /*** [get] ***/
 		public Object getTState() {
 			wv.getRootSet().add(name);
 			return null;
