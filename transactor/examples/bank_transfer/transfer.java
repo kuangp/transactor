@@ -322,9 +322,9 @@ public class transfer extends Transactor {
 					Message message = new Message( self, atm, "printData", _arguments, token_2_4, token_2_5 );
 					__messages.add( message );
 				}
-				// atm<-transfer(101)
+				// atm<-transfer(100)
 				{
-					Object _arguments[] = { new Integer(101) };
+					Object _arguments[] = { new Integer(100) };
 					Message message = new Message( self, atm, "transfer", _arguments, token_2_5, token_2_6 );
 					__messages.add( message );
 				}

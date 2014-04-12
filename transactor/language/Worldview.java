@@ -116,7 +116,7 @@ public class Worldview implements Serializable {
             System.out.println(e);
         */
         boolean done = false;
-        
+       
         while (!done) {
             done = true;
             for (String t : V.keySet()) {
@@ -159,12 +159,14 @@ public class Worldview implements Serializable {
                     }
                     else if (second.validates(first)) {
                         HashSet<Worldview.Tuple<String, History> > transitive = new HashSet< >();
+                        // For dependency cycle detection
+                        HashSet<Worldview.Tuple<String, History> > found = new HashSet< >();
                         transitive.add(current);
                         while (transitive.size() > 0) {
                             HashSet<Worldview.Tuple<String, History> > new_transitive = new HashSet< >();
                             for (Worldview.Tuple<String, History> find : transitive) {
                                 for (Worldview.Tuple<Worldview.Tuple<String, History>, Worldview.Tuple<String, History> > e : E) {
-                                    if (e.getFirst().equals(find)) {
+                                    if (e.getFirst().equals(find) && !found.contains(e.getSecond())) {
                                         new_transitive.add(e.getSecond());
                                         History updated_hist = new History(e.getSecond().getSecond());
                                         updated_hist.stabilize();
@@ -172,6 +174,7 @@ public class Worldview implements Serializable {
                                     }
                                 }
                             }
+                            found.addAll(transitive);
                             transitive.clear();
                             transitive.addAll(new_transitive);
                         }

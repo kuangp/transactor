@@ -119,10 +119,15 @@ public class Transactor extends UniversalActor  {
 		public void recvMsg(Message msg, Worldview msg_wv) {
             //System.out.println("Current mailbox for " + name + " : \n" + mailbox + "\n");
             //System.out.println("next msg for " + name + " : \n" + msg + "\n");
+            //System.out.println("msgs wv :\n" + msg_wv);
+            //System.out.println("MY WV:\n" + this.wv);
 			Worldview union = wv.union(msg_wv);
+            //System.out.println("UNION:::\n" + union);
+            //System.out.println("HERE : " + msg);
 			HashSet current = new HashSet();
 			current.add(name);
 			if (union.invalidates(wv.getHistMap(), current)) {
+                //System.out.println("msg caued rollback.................");
                 /*** [rcv3] ***/
 				if (wv.getHistMap().get(name).isPersistent()) {
 					
@@ -146,16 +151,17 @@ public class Transactor extends UniversalActor  {
 				}
                 /*** [rcv4] ***/
 				else {
+                    //System.out.println("DESTROYED................\n");
 					this.destroy();
 				}
 			}
             /*** [rcv2] ***/
 			else if (union.invalidates(msg_wv.getHistMap(), msg_wv.getRootSet())) {
                 // Message is invalidate so we send ack and ignore
+                //System.out.println("message invalidated~~~~~~~~~~~~\n"+msg+"\n");
                 responseAck(msg);
                 wv = union;
                 wv.setRootSet(new HashSet());
-                //System.out.println("message invalidated~~~~~~~~~~~~\n"+msg+"\n");
                 //System.out.println("message wv: \n" + msg_wv + "\n\n");
 			}
             /*** [rcv1] ***/
@@ -246,6 +252,7 @@ public class Transactor extends UniversalActor  {
         // TODO: extend with USL and ftp protocol with better filenaming scheme
 		public void checkpoint() {
             // If this Transactor is stable 
+            //System.out.println(name + ": " + wv.getHistMap().get(name) + " : checkingpointing......");
 			if (!dependent()&&wv.getHistMap().get(name).isStable()) {
                 /*** [chk1] ***/
                 // Update this history to indicate checkpoint
@@ -288,6 +295,7 @@ public class Transactor extends UniversalActor  {
 			else {
                 /*** [chk2] ***/
                 // If we are not stable then empty our root set and stop processing of current message
+                //System.out.println(name + " :  not stable, cannot checkpoint...");
 				wv.setRootSet(new HashSet());
 			}
             // TODO: End parent method here to transition to ready state
@@ -309,7 +317,7 @@ public class Transactor extends UniversalActor  {
 			if (!wv.getHistMap().get(name).isStable()||force) {
                 /*** [rol2] ***/
 				if (wv.getHistMap().get(name).isPersistent()) {
-                    //System.out.println(self + ": rolling back...........");
+                    System.out.println(self + ": rolling back...........");
                    
                     // We need to send out previous messages first to carry on current worldview before a rollback
                     //sendGeneratedMessages(); // End message instead and let process send them, msg init takes care of wv snapshot
