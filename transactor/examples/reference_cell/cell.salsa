@@ -1,0 +1,26 @@
+module transactor.examples.reference_cell;
+
+import transactor.language.*;
+import java.util.*;
+
+// Unreliable Reference Cell
+behavior cell extends Transactor {
+    private int contents = 0;
+
+    public cell(int contents) {
+        super(self);
+        this.contents = contents;
+        this.setTState();
+    }
+
+    public void set(int val) {
+        contents = val;
+        this.setTState();
+    }
+
+    public void get(Transactor customer) {
+        this.getTState();
+        Object[] args = {contents};
+        this.sendMsg("data", args, customer);
+    }
+}

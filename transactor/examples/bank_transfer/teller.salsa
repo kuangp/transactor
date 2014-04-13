@@ -7,15 +7,16 @@ behavior teller extends Transactor {
 
     private bankaccount inacct;
     private bankaccount outacct;
-    private int acks;
+    private int acks = 0;
 
     public teller(bankaccount in, bankaccount out, int num_acks){
         super(self);
+        this.getTState(); // Getting acks, inacct, outacct
         acks = num_acks;
         inacct = in;
         outacct = out;
         this.stabilize();
-        this.checkpoint();
+        this.checkpoint(); return;
     }
 
     public void transfer(int delta){
@@ -30,8 +31,10 @@ behavior teller extends Transactor {
 
     public void done(String msg){
         standardOutput<-println(msg);
+        this.getTState(); // Getting ack
         acks = acks + 1;
-        this.setTState();
+        this.setTState(); // Setting ack
+        this.getTState(); // Getting ack
         if (acks == 2){
             this.stabilize();
             Object[] p1 = {inacct};
@@ -46,10 +49,11 @@ behavior teller extends Transactor {
     }
 
     public void ping() {
-        this.checkpoint();
+        this.checkpoint(); return;
     }
 
     public void printData(){
+        this.getTState(); // Getting ack
         System.out.println("Acks: " + acks);
         System.out.println(this.getString());
     }   

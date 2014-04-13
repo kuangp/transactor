@@ -84,7 +84,7 @@ public class Transactor extends UniversalActor  {
         
         /* 
          * Super constructor must be called from subclasses of transactors
-         * Transactor complier would need to insert super(self) into the construct method or create a noargs construct is none is found 
+         * Transactor complier would need to insert super(self) into the construct method AND create a noargs construct is none is found 
          * self is needed since subclasses overrides its parents memeber variables and hides it from the parent
          * so we need access to self in these methods
          */
@@ -194,6 +194,7 @@ public class Transactor extends UniversalActor  {
             // therefore worldview modifications after this call will not be reflected
             Object args[] = { msg, this.wv };
             Message recvMsg = new Message( self, recipient, "recvMsg", args, null, null );
+            //System.out.println(name + " sending : " + msg);
             //System.out.println("Sending msg: " + msg + "\n\n");
             __messages.add(recvMsg);
 		}
@@ -254,6 +255,7 @@ public class Transactor extends UniversalActor  {
             // If this Transactor is stable 
             //System.out.println(name + ": " + wv.getHistMap().get(name) + " : checkingpointing......");
 			if (!dependent()&&wv.getHistMap().get(name).isStable()) {
+                sendGeneratedMessages(); // send out current messages so they won't be saved
                 /*** [chk1] ***/
                 // Update this history to indicate checkpoint
 				wv.getHistMap().get(name).checkpoint();
@@ -317,7 +319,7 @@ public class Transactor extends UniversalActor  {
 			if (!wv.getHistMap().get(name).isStable()||force) {
                 /*** [rol2] ***/
 				if (wv.getHistMap().get(name).isPersistent()) {
-                    System.out.println(self + ": rolling back...........");
+                    //System.out.println(self + ": rolling back...........");
                    
                     // We need to send out previous messages first to carry on current worldview before a rollback
                     //sendGeneratedMessages(); // End message instead and let process send them, msg init takes care of wv snapshot

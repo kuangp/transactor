@@ -5,7 +5,7 @@ import java.util.*;
 
 behavior transfer extends Transactor {
 
-    void act(String[] args){
+    void act(String[] args) {
         bankaccount savings = new bankaccount(100);
         bankaccount checking = new bankaccount(100);
         teller atm = new teller(savings, checking, 0);

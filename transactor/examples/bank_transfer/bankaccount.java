@@ -264,12 +264,13 @@ public class bankaccount extends Transactor {
 			}
 		}
 
-		int bal;
+		int bal = 0;
 		public void construct(int balance){
 			super.construct( (((bankaccount)self)) );
 			bal = balance;
 			this.stabilize();
 			this.checkpoint();
+						return;
 		}
 		public void adj(int delta, Transactor atm) {
 			bal = bal+delta;
@@ -280,6 +281,7 @@ public class bankaccount extends Transactor {
 				this.getTState();
 				this.sendMsg("done", response, atm);
 				this.rollback(false, null);
+				return;
 			}
 }			else {{
 				this.stabilize();
@@ -293,6 +295,7 @@ public class bankaccount extends Transactor {
 		}
 		public void ping() {
 			this.checkpoint();
+			return;
 		}
 		public String printData() {
 			System.out.println("Balance: "+bal);

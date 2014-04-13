@@ -1,0 +1,40 @@
+module transactor.examples.reference_cell;
+
+import transactor.language.*;
+import java.util.*;
+
+// Persistent Reliable Reference Cell
+behavior prcell extends Transactor {
+    private int contents = 0;
+
+    public prcell(int contents) {
+        super(self);
+        this.contents = contents;
+        this.setTState();
+    }
+
+    public void initialize() {
+        this.stabilize();
+        this.checkpoint(); return;
+    }
+
+    public void set(int val) {
+        contents = val;
+        this.setTState();
+        if (this.dependent()) {
+            this.rollback(false, null); return;
+        }
+        else {
+            this.stabilize();
+            this.checkpoint(); return;
+        }
+    }
+
+    public void get(Transactor customer) {
+        this.stabilize();
+        this.getTState();
+        Object[] args = {contents};
+        this.sendMsg("data", args, customer);
+        this.checkpoint(); return;
+    }
+}

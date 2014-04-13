@@ -5,13 +5,13 @@ import java.util.*;
 
 behavior bankaccount extends Transactor {
 
-    private int bal;
+    private int bal = 0;
     
     public bankaccount(int balance){
         super(self);
         bal = balance;
         this.stabilize();
-        this.checkpoint();
+        this.checkpoint(); return;
     }
 
     public void adj(int delta, Transactor atm){
@@ -22,7 +22,7 @@ behavior bankaccount extends Transactor {
             response[0] = "Not enough funds!";
             this.getTState();
             this.sendMsg("done", response, atm);
-            this.rollback(false, null);
+            this.rollback(false, null); return;
         }
         else {
             this.stabilize();
@@ -37,7 +37,7 @@ behavior bankaccount extends Transactor {
     }
 
     public void ping(){
-        this.checkpoint();
+        this.checkpoint(); return;
     }
 
     public String printData(){
