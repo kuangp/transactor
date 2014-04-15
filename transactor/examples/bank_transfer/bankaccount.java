@@ -267,18 +267,16 @@ public class bankaccount extends Transactor {
 		int bal = 0;
 		public void construct(int balance){
 			super.construct( (((bankaccount)self)) );
-			bal = balance;
+			this.setTState("bal", balance);
 			this.stabilize();
 			this.checkpoint();
 						return;
 		}
 		public void adj(int delta, Transactor atm) {
-			bal = bal+delta;
-			this.setTState();
+			this.setTState("bal", ((int)this.getTState("bal"))+delta);
 			Object[] response = new Object[1];
 			if (bal<0) {{
 				response[0] = "Not enough funds!";
-				this.getTState();
 				this.sendMsg("done", response, atm);
 				this.rollback(false, null);
 				return;
@@ -286,7 +284,6 @@ public class bankaccount extends Transactor {
 }			else {{
 				this.stabilize();
 				response[0] = "Balance update successful!";
-				this.getTState();
 				this.sendMsg("done", response, atm);
 			}
 }		}
@@ -297,10 +294,9 @@ public class bankaccount extends Transactor {
 			this.checkpoint();
 			return;
 		}
-		public String printData() {
-			System.out.println("Balance: "+bal);
+		public void printData() {
+			System.out.println("Balance: "+((int)this.getTState("bal")));
 			System.out.println(this.getString());
-			return "Balance: "+bal+"\n"+this.getString();
 		}
 	}
 }

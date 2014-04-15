@@ -2,6 +2,7 @@ module transactor.examples.reference_cell;
 
 import transactor.language.*;
 import java.util.*;
+import java.lang.reflect.Field;
 
 // Persistent Reference Cell
 behavior pcell extends Transactor {
@@ -9,8 +10,7 @@ behavior pcell extends Transactor {
 
     public pcell(int contents) {
         super(self);
-        this.contents = contents;
-        this.setTState();
+        this.setTState("contents", contents);
     }
 
     public void initialize() {
@@ -19,17 +19,19 @@ behavior pcell extends Transactor {
     }
 
     public void set(int val) {
-        contents = val;
-        this.setTState();
+        this.setTState("contents", val);
         this.stabilize();
         this.checkpoint(); return;
     }
 
     public void get(Transactor customer) {
         this.stabilize();
-        this.getTState();
-        Object[]args = {contents};
+        Object[]args = {((int)this.getTState("contents"))};
         this.sendMsg("data", args, customer);
         this.checkpoint(); return;
+    }
+
+    public void pingreq(Transactor source) {
+        this.sendMsg("ping", new Object[0], source);
     }
 }

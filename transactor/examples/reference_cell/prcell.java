@@ -267,8 +267,7 @@ public class prcell extends Transactor {
 		int contents = 0;
 		public void construct(int contents){
 			super.construct( (((prcell)self)) );
-			this.contents = contents;
-			this.setTState();
+			this.setTState("contents", contents);
 		}
 		public void initialize() {
 			this.stabilize();
@@ -276,9 +275,16 @@ public class prcell extends Transactor {
 			return;
 		}
 		public void set(int val) {
-			contents = val;
-			this.setTState();
+			this.setTState("contents", val);
 			if (this.dependent()) {{
+				{
+					// standardOutput<-println("client is dependent while issuing set(): rolling back state......")
+					{
+						Object _arguments[] = { "client is dependent while issuing set(): rolling back state......" };
+						Message message = new Message( self, standardOutput, "println", _arguments, null, null );
+						__messages.add( message );
+					}
+				}
 				this.rollback(false, null);
 				return;
 			}
@@ -290,11 +296,13 @@ public class prcell extends Transactor {
 }		}
 		public void get(Transactor customer) {
 			this.stabilize();
-			this.getTState();
-			Object[] args = { contents };
+			Object[] args = { ((int)this.getTState("contents")) };
 			this.sendMsg("data", args, customer);
 			this.checkpoint();
 			return;
+		}
+		public void pingreq(Transactor source) {
+			this.sendMsg("ping", new Object[0], source);
 		}
 	}
 }

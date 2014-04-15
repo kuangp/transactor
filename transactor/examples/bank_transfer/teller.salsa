@@ -11,40 +11,34 @@ behavior teller extends Transactor {
 
     public teller(bankaccount in, bankaccount out, int num_acks){
         super(self);
-        this.getTState(); // Getting acks, inacct, outacct
-        acks = num_acks;
-        inacct = in;
-        outacct = out;
+        this.setTState("acks", num_acks);
+        this.setTState("inacct", in);
+        this.setTState("outacct", out);
         this.stabilize();
         this.checkpoint(); return;
     }
 
     public void transfer(int delta){
-        Transactor t = this.self();
         // Transactor operations should not be messages, but instead
         // method calls under implementation to be executed sequentially 
-        Object[] in_params = {delta, t};
-        Object[] out_params = {-1*delta, t};
-        this.sendMsg("adj", in_params, inacct);
-        this.sendMsg("adj", out_params, outacct);
+        Object[] in_params = {delta, this.self()};
+        Object[] out_params = {-1*delta, this.self()};
+        this.sendMsg("adj", in_params, ((Transactor)this.getTState("inacct")));
+        this.sendMsg("adj", out_params, ((Transactor)this.getTState("outacct")));
     }
 
     public void done(String msg){
         standardOutput<-println(msg);
-        this.getTState(); // Getting ack
-        acks = acks + 1;
-        this.setTState(); // Setting ack
-        this.getTState(); // Getting ack
-        if (acks == 2){
+        this.setTState("acks", ((int)this.getTState("acks")) + 1); // Setting ack
+        if (((int)this.getTState("acks")) == 2){
             this.stabilize();
-            Object[] p1 = {inacct};
-            Object[] p2 = {outacct};
-            this.sendMsg("pingreq", p1, outacct);
-            this.sendMsg("pingreq", p2, inacct);
-            Transactor t = this.self();
-            Object[] p3 = {t};
-            this.sendMsg("pingreq", p3, inacct);
-            this.sendMsg("pingreq", p3, outacct);
+            Object[] p1 = {((Transactor)this.getTState("inacct"))};
+            Object[] p2 = {((Transactor)this.getTState("outacct"))};
+            this.sendMsg("pingreq", p1, ((Transactor)this.getTState("outacct")));
+            this.sendMsg("pingreq", p2, ((Transactor)this.getTState("inacct")));
+            Object[] p3 = {this.self()};
+            this.sendMsg("pingreq", p3, ((Transactor)this.getTState("inacct")));
+            this.sendMsg("pingreq", p3, ((Transactor)this.getTState("outacct")));
         }
     }
 
@@ -53,8 +47,7 @@ behavior teller extends Transactor {
     }
 
     public void printData(){
-        this.getTState(); // Getting ack
-        System.out.println("Acks: " + acks);
+        System.out.println("Acks: " + ((int)this.getTState("acks")));
         System.out.println(this.getString());
     }   
 }

@@ -270,51 +270,48 @@ public class cell_tester extends Transactor {
 		prcell test_prcell;
 		public void construct(){
 			super.construct( (((cell_tester)self)) );
+			this.setTState("test_prcell", ((prcell)this.newTActor(((prcell)new prcell(this).construct(2)))));
 			this.stabilize();
-			this.getTState();
-			test_prcell = (prcell)this.newTActor(((prcell)new prcell(this).construct(2)));
-			this.setTState();
-			Object[] none = new Object[0];
-			this.sendMsg("initialize", none, test_prcell);
+			this.sendMsg("initialize", new Object[0], ((prcell)this.getTState("test_prcell")));
 			this.checkpoint();
 						return;
 		}
 		public void test_cell() {
 			Object[] me = { this.self() };
-			this.getTState();
-			this.sendMsg("get", me, test_cell);
+			this.sendMsg("get", me, ((cell)this.getTState("test_cell")));
 			Object[] params = { 5 };
-			this.getTState();
-			this.sendMsg("set", params, test_cell);
-			this.getTState();
-			this.sendMsg("get", me, test_cell);
+			this.sendMsg("set", params, ((cell)this.getTState("test_cell")));
+			this.sendMsg("get", me, ((cell)this.getTState("test_cell")));
 		}
 		public void test_pcell() {
 			Object[] me = { this.self() };
-			this.getTState();
-			this.sendMsg("get", me, test_pcell);
+			this.sendMsg("get", me, ((pcell)this.getTState("test_pcell")));
 			Object[] params = { 10 };
-			this.getTState();
-			this.sendMsg("set", params, test_pcell);
-			this.getTState();
-			this.sendMsg("get", me, test_pcell);
+			this.sendMsg("set", params, ((pcell)this.getTState("test_pcell")));
+			this.sendMsg("get", me, ((pcell)this.getTState("test_pcell")));
 		}
 		public void test_prcell() {
 			Object[] me = { this.self() };
-			this.getTState();
-			this.sendMsg("get", me, test_prcell);
-			this.getTState();
+			this.sendMsg("get", me, ((prcell)this.getTState("test_prcell")));
 			Object[] params = { 15 };
-			this.sendMsg("set", params, test_prcell);
-			this.getTState();
-			this.sendMsg("get", me, test_prcell);
+			this.sendMsg("set", params, ((prcell)this.getTState("test_prcell")));
+			this.sendMsg("get", me, ((prcell)this.getTState("test_prcell")));
 		}
 		public void data(int contents) {
 			System.out.println("Tester got data: "+contents);
 		}
+		boolean start = false;
+		public void ping() {
+			if (!this.setTState("start", true)) {{
+				this.sendMsg("ping", new Object[0], this.self());
+				this.checkpoint();
+				return;
+			}
+}			this.sendMsg("test_prcell", new Object[0], this.self());
+		}
 		public void act(String[] args) {
-			Object[] params = new Object[0];
-			this.sendMsg("test_prcell", params, this.self());
+			Object[] params = { this.self() };
+			this.sendMsg("pingreq", params, ((prcell)this.getTState("test_prcell")));
 		}
 	}
 }

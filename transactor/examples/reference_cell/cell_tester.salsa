@@ -13,63 +13,62 @@ behavior cell_tester extends Transactor {
 
     public cell_tester() {
         super(self);
+        //this.setTState("test_cell", ((cell)this.newTActor(new cell(0))));
+        //this.setTState("test_pcell", ((pcell)this.newTActor(new pcell(1))));
+        this.setTState("test_prcell", ((prcell)this.newTActor(new prcell(2))));
         this.stabilize(); // Stabilize so cell inits succeed
-        this.getTState(); // Getting cell members
-        //test_cell = (cell) this.newTActor(new cell(0));
-        //test_pcell = (pcell) this.newTActor(new pcell(1));
-        test_prcell = (prcell) this.newTActor(new prcell(2));
-        this.setTState();
-        Object[] none = new Object[0];
-        //this.sendMsg("initialize", none, test_pcell);
-        // cell shouldn't dependent when initializing or intial state won't be checkpointed and prcell remains stable and unable to roll back when interacting with volitile transactors
-        this.sendMsg("initialize", none, test_prcell);
+        //this.sendMsg("initialize", new Object[0], ((pcell)this.getTState("test_pcell")));
+        // Cell shouldn't dependent when initializing or intial state won't be checkpointed and prcell remains stable and unable to roll back when interacting with volitile transactors
+        this.sendMsg("initialize", new Object[0], ((prcell)this.getTState("test_prcell")));
         this.checkpoint(); return; // Clear root set
     }
 
     // Unreliable cell
     public void test_cell() {
         Object[] me = {this.self()};
-        this.getTState(); // Getting test_cell
-        this.sendMsg("get", me, test_cell);
+        this.sendMsg("get", me, ((cell)this.getTState("test_cell")));
         Object[] params = {5};
-        this.getTState(); // Getting test_cell
-        this.sendMsg("set", params, test_cell);
-        this.getTState(); // Getting test_cell
-        this.sendMsg("get", me, test_cell);
+        this.sendMsg("set", params, ((cell)this.getTState("test_cell")));
+        this.sendMsg("get", me, ((cell)this.getTState("test_cell")));
     }
 
     // Persistent cell
     public void test_pcell() {
         Object[] me = {this.self()};
-        this.getTState(); // Getting test_pcell
-        this.sendMsg("get", me, test_pcell);
+        this.sendMsg("get", me, ((pcell)this.getTState("test_pcell")));
         Object[] params = {10};
-        this.getTState(); // Getting test_pcell
-        this.sendMsg("set", params, test_pcell);
-        this.getTState(); // Getting test_pcell
-        this.sendMsg("get", me, test_pcell);
+        this.sendMsg("set", params, ((pcell)this.getTState("test_pcell")));
+        this.sendMsg("get", me, ((pcell)this.getTState("test_pcell")));
     }
 
     // Persistent Reliable Cell
     public void test_prcell() {
         Object[] me = {this.self()};
-        this.getTState(); // Getting test_prcell
-        this.sendMsg("get", me, test_prcell);
-        this.getTState(); // Getting test_prcell
+        this.sendMsg("get", me, ((prcell)this.getTState("test_prcell")));
         Object[] params = {15};
-        this.sendMsg("set", params, test_prcell);
-        this.getTState(); // Getting test_prcell
-        this.sendMsg("get", me, test_prcell);
+        this.sendMsg("set", params, ((prcell)this.getTState("test_prcell")));
+        this.sendMsg("get", me, ((prcell)this.getTState("test_prcell")));
     }
  
     public void data(int contents) {
         System.out.println("Tester got data: " + contents);
     }
 
+    private boolean start = false;
+    public void ping() {
+        if (!this.setTState("start", true)) {
+            this.sendMsg("ping", new Object[0], this.self());
+            this.checkpoint(); return;
+        }
+        
+        //this.sendMsg("test_pcell", new Object[0], this.self());
+        this.sendMsg("test_prcell", new Object[0], this.self());
+    }
+
     void act(String[] args) {
-        Object[] params = new Object[0];
-        //this.sendMsg("test_cell", params, this.self());
-        //this.sendMsg("test_pcell", params, this.self());
-        this.sendMsg("test_prcell", params, this.self());
+        Object[] params = { this.self() };
+        //this.sendMsg("test_cell", new Object[0], this.self());
+        //this.sendMsg("pingreq", params, ((pcell)this.getTState("test_pcell")));
+        this.sendMsg("pingreq", params, ((prcell)this.getTState("test_prcell")));
     }
 }

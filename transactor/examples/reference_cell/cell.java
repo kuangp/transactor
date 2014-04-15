@@ -267,16 +267,13 @@ public class cell extends Transactor {
 		int contents = 0;
 		public void construct(int contents){
 			super.construct( (((cell)self)) );
-			this.contents = contents;
-			this.setTState();
+			this.setTState("contents", contents);
 		}
 		public void set(int val) {
-			contents = val;
-			this.setTState();
+			this.setTState("contents", val);
 		}
 		public void get(Transactor customer) {
-			this.getTState();
-			Object[] args = { contents };
+			Object[] args = { ((int)this.getTState("contents")) };
 			this.sendMsg("data", args, customer);
 		}
 	}

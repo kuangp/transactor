@@ -5,6 +5,7 @@ import java.util.*;
 
 behavior transfer extends Transactor {
 
+    // This example is tested with an actor for simplicity
     void act(String[] args) {
         bankaccount savings = new bankaccount(100);
         bankaccount checking = new bankaccount(100);
@@ -15,7 +16,7 @@ behavior transfer extends Transactor {
             checking<-printData() @
         standardOutput<-println("TELLER: ") @
             atm<-printData() @
-        atm<-transfer(100) @
+        atm<-transfer(101) @
         // wait for transactions to complete
         standardOutput<-println("===================================="):delay(new Integer(5000)) @
         standardOutput<-println("SAVINGS ACCOUNT: ") @

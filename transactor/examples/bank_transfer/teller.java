@@ -269,20 +269,18 @@ public class teller extends Transactor {
 		int acks = 0;
 		public void construct(bankaccount in, bankaccount out, int num_acks){
 			super.construct( (((teller)self)) );
-			this.getTState();
-			acks = num_acks;
-			inacct = in;
-			outacct = out;
+			this.setTState("acks", num_acks);
+			this.setTState("inacct", in);
+			this.setTState("outacct", out);
 			this.stabilize();
 			this.checkpoint();
 						return;
 		}
 		public void transfer(int delta) {
-			Transactor t = this.self();
-			Object[] in_params = { delta, t };
-			Object[] out_params = { -1*delta, t };
-			this.sendMsg("adj", in_params, inacct);
-			this.sendMsg("adj", out_params, outacct);
+			Object[] in_params = { delta, this.self() };
+			Object[] out_params = { -1*delta, this.self() };
+			this.sendMsg("adj", in_params, ((Transactor)this.getTState("inacct")));
+			this.sendMsg("adj", out_params, ((Transactor)this.getTState("outacct")));
 		}
 		public void done(String msg) {
 			{
@@ -293,20 +291,16 @@ public class teller extends Transactor {
 					__messages.add( message );
 				}
 			}
-			this.getTState();
-			acks = acks+1;
-			this.setTState();
-			this.getTState();
-			if (acks==2) {{
+			this.setTState("acks", ((int)this.getTState("acks"))+1);
+			if (((int)this.getTState("acks"))==2) {{
 				this.stabilize();
-				Object[] p1 = { inacct };
-				Object[] p2 = { outacct };
-				this.sendMsg("pingreq", p1, outacct);
-				this.sendMsg("pingreq", p2, inacct);
-				Transactor t = this.self();
-				Object[] p3 = { t };
-				this.sendMsg("pingreq", p3, inacct);
-				this.sendMsg("pingreq", p3, outacct);
+				Object[] p1 = { ((Transactor)this.getTState("inacct")) };
+				Object[] p2 = { ((Transactor)this.getTState("outacct")) };
+				this.sendMsg("pingreq", p1, ((Transactor)this.getTState("outacct")));
+				this.sendMsg("pingreq", p2, ((Transactor)this.getTState("inacct")));
+				Object[] p3 = { this.self() };
+				this.sendMsg("pingreq", p3, ((Transactor)this.getTState("inacct")));
+				this.sendMsg("pingreq", p3, ((Transactor)this.getTState("outacct")));
 			}
 }		}
 		public void ping() {
@@ -314,8 +308,7 @@ public class teller extends Transactor {
 			return;
 		}
 		public void printData() {
-			this.getTState();
-			System.out.println("Acks: "+acks);
+			System.out.println("Acks: "+((int)this.getTState("acks")));
 			System.out.println(this.getString());
 		}
 	}

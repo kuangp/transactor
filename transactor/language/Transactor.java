@@ -33,6 +33,7 @@ import salsa.resources.ActorService;
 
 import java.io.*;
 import java.util.*;
+import java.lang.reflect.Field;
 import gc.*;
 
 // NOTE: The order of execution of worldview modification is important in some methods
@@ -69,6 +70,9 @@ public class Transactor extends UniversalActor  {
 
 		public State(UAN __uan, UAL __ual) {
 			super(__uan, __ual);
+            // For future implementation:
+            // Here we process the "self" that was passed up through super(__uan, __uan, self) calls from subclasses 
+            // this.self = self; etc.... from current construct method
 			addClassName( "transactor.language.Transactor$State" );
 			addMethodsForClasses();
 		}
@@ -306,8 +310,7 @@ public class Transactor extends UniversalActor  {
 
         /*** [self] ***/
 		public Transactor self() {
-			this.getTState();
-			return ((Transactor)self);
+			return (Transactor) this.getTState("self");
 		}
 
         /* 
@@ -393,17 +396,33 @@ public class Transactor extends UniversalActor  {
 			return name+" -> "+wv.getHistMap().get(name).toString()+"\n"+wv.toString();
 		}
 
-        /* 
-         * how to handle static member variables? serialize them?
-         * if one transactor sets it how do others see dependency? 
-         * one can checkpoint/set state because of static content set by other 
-         * and other rollback but wont be recognized cause no dep -> static members are not allowed in SALSA
-         * if self is seperately contained, can we access direct members in subclass state?
-         * compiler syntax for setting state?
-         */
-		public boolean setTState() {
+        // TODO: Handle exceptions
+		public boolean setTState(String field, Object newValue) {
+            Field myField;
+
 			if (!wv.getHistMap().get(name).isStable()) {
                 /*** [set1] ***/
+                try {
+                    myField = this.getClass().getDeclaredField(field);
+                    myField.setAccessible(true);
+                    myField.set(this, newValue);
+                } catch (NoSuchFieldException e) {
+                    try {
+                        myField = this.getClass().getField(field);
+                        myField.setAccessible(true);
+                        myField.set(this, newValue);
+                    } catch (NoSuchFieldException f) { 
+                        System.out.println("no such field exception");
+                        return false; 
+                    } catch (IllegalAccessException g) { 
+                        System.out.println("illegal access exception 1");
+                        return false; 
+                    }
+                } catch (IllegalAccessException g) { 
+                    System.out.println("illegal access exception 2");
+                    return false; 
+                }
+
 				if (!wv.getDepGraph().containsKey(name)) {
 					wv.getDepGraph().put(name, new HashSet());
 				}
@@ -421,9 +440,34 @@ public class Transactor extends UniversalActor  {
          * Need to handle member variable retrieval 
          */
         /*** [get] ***/
-		public Object getTState() {
+        // TODO: Handle exceptions
+		public Object getTState(String field) {
+            Object value;
+            Field myField;
+            try {
+                myField = this.getClass().getDeclaredField(field);
+                myField.setAccessible(true);
+                value = myField.get(this);
+            } catch (NoSuchFieldException e) {
+                try {
+                    myField = this.getClass().getField(field);
+                    myField.setAccessible(true);
+                    value = myField.get(this);
+                } catch (NoSuchFieldException f) { 
+                    System.out.println("no such field exception");
+                    return null; 
+                } catch (IllegalAccessException g) { 
+                    System.out.println("illegal access exception 1");
+                    return null; 
+                }
+            } catch (IllegalAccessException g) { 
+                System.out.println("illegal access exception 2");
+                System.out.println(g);
+                return null; 
+            }
+
 			wv.getRootSet().add(name);
-			return null;
+            return value;
 		}
 	}
 }

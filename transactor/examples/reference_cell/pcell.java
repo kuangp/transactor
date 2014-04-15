@@ -33,6 +33,7 @@ import salsa.resources.ActorService;
 
 import transactor.language.*;
 import java.util.*;
+import java.lang.reflect.Field;
 
 public class pcell extends Transactor {
 	public static void main(String args[]) {
@@ -267,8 +268,7 @@ public class pcell extends Transactor {
 		int contents = 0;
 		public void construct(int contents){
 			super.construct( (((pcell)self)) );
-			this.contents = contents;
-			this.setTState();
+			this.setTState("contents", contents);
 		}
 		public void initialize() {
 			this.stabilize();
@@ -276,19 +276,20 @@ public class pcell extends Transactor {
 			return;
 		}
 		public void set(int val) {
-			contents = val;
-			this.setTState();
+			this.setTState("contents", val);
 			this.stabilize();
 			this.checkpoint();
 			return;
 		}
 		public void get(Transactor customer) {
 			this.stabilize();
-			this.getTState();
-			Object[] args = { contents };
+			Object[] args = { ((int)this.getTState("contents")) };
 			this.sendMsg("data", args, customer);
 			this.checkpoint();
 			return;
+		}
+		public void pingreq(Transactor source) {
+			this.sendMsg("ping", new Object[0], source);
 		}
 	}
 }
