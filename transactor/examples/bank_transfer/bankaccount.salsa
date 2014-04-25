@@ -17,7 +17,7 @@ behavior bankaccount extends Transactor {
     public void adj(int delta, Transactor atm){
         this.setTState("bal", ((int)this.getTState("bal")) + delta);
         Object[] response = new Object[1];
-        if (bal < 0){
+        if (((int)this.getTState("bal")) < 0){
             response[0] = "Not enough funds!";
             this.sendMsg("done", response, atm);
             this.rollback(false, null); return;

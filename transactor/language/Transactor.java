@@ -35,6 +35,7 @@ import java.io.*;
 import java.util.*;
 import java.lang.reflect.Field;
 import gc.*;
+import java.net.URI;
 
 // NOTE: The order of execution of worldview modification is important in some methods
 public class Transactor extends UniversalActor  {
@@ -47,7 +48,7 @@ public class Transactor extends UniversalActor  {
 	public Transactor(boolean o, UAN __uan)	{ super(false,__uan); }
 	public Transactor(boolean o, UAL __ual)	{ super(false,__ual); }
 	public Transactor()		{  }
-
+/*
 	public UniversalActor construct (Transactor self) {
 		Object[] __arguments = { self };
 		this.send( new Message(this, this, "construct", __arguments, null, null) );
@@ -59,7 +60,7 @@ public class Transactor extends UniversalActor  {
 		this.send( new Message(this, this, "construct", __arguments, null, null) );
 		return this;
 	}
-
+*/
 	public class State extends UniversalActor .State {
 		public Transactor self;
 		public void updateSelf(ActorReference actorReference) {}
@@ -73,6 +74,9 @@ public class Transactor extends UniversalActor  {
             // For future implementation:
             // Here we process the "self" that was passed up through super(__uan, __uan, self) calls from subclasses 
             // this.self = self; etc.... from current construct method
+            // NOTE: we can't do the above since self UAN has not been created yet at the UniversalActor.State super class so we 
+            // should leave evaluation of self in the construct() below ***
+            // NOTE: We can compile super.updateSelf(this) in subclass updateSelf() instead of inserting super() in subclass constructor but both have the same efficiency ***
 			addClassName( "transactor.language.Transactor$State" );
 			addMethodsForClasses();
 		}
@@ -85,6 +89,9 @@ public class Transactor extends UniversalActor  {
         // Migration must have UAN which should not change, so UAL should not change for annoynomous actor
         // Therefore we don't have to worry about change of name unless it is possible to change UAN
 		private String name;
+
+        // Transactor Universal Storage Location: URI that locates where a persistent state is saved and identifies the protocol used to save/load states from stable storage to be used by the TStorageService
+        private URI USL;
         
         /* 
          * Super constructor must be called from subclasses of transactors
@@ -95,13 +102,16 @@ public class Transactor extends UniversalActor  {
 		public void construct(Transactor self){
             // Future implementation might want to include wv info for dep passing in Message objects
             // -> When sending messages the source transactor would carry it's WV as a member variable we can check against
-            // ->-> but wv needs to updated with self everything it is changed, self is meant to just be a reference so we want to pass wv into the message object instead of packaging it with self
+            // ->-> but wv needs to updated with self everytime it is changed, self is meant to just be a reference so we want to pass wv into the message object instead of packaging it with self
             // How is self updated when migrating in SALSA?
 			this.self = self;
 			if (self.getUAN() != null) 
                 this.name = self.getUAN().toString();
 			else 
-                this.name = self.getUAL().toString();
+            this.name = self.getUAL().toString();
+            try { this.USL = new URI("file:///Users/carrykuang/Documents/transactor/"+name.charAt(name.length()-1)+".ser"); }
+            // TODO: Handle malformed uri
+            catch (Exception e) { e.printStackTrace(); }
 			wv = new Worldview();
 			HashMap new_histMap = new HashMap();
 			new_histMap.put(name, new History());
@@ -162,7 +172,7 @@ public class Transactor extends UniversalActor  {
             /*** [rcv2] ***/
 			else if (union.invalidates(msg_wv.getHistMap(), msg_wv.getRootSet())) {
                 // Message is invalidate so we send ack and ignore
-                //System.out.println("message invalidated~~~~~~~~~~~~\n"+msg+"\n");
+                System.out.println("message invalidated~~~~~~~~~~~~\n"+msg+"\n");
                 responseAck(msg);
                 wv = union;
                 wv.setRootSet(new HashSet());
@@ -277,19 +287,9 @@ public class Transactor extends UniversalActor  {
                 mailbox = new Vector();
                 pendingMessages = new Hashtable();
                 unresolvedTokens = new Vector();
-
-                // Serialize our state to local storage
-				try {
-					FileOutputStream fileOut = new FileOutputStream("./"+name.charAt(name.length()-1)+".ser");
-					ObjectOutputStream out = new ObjectOutputStream(fileOut);
-					out.writeObject(this);
-					out.close();
-					fileOut.close();
-				}
-				catch (IOException e) {
-					e.printStackTrace();
-				}
                 
+                ServiceFactory.getTStorage().store(this, USL);
+
                 // Place messages back in mailboxes
                 // NOTE: We should end processing of the current message after checkpoint completes
                 //       The messages in the mailbox should process as usual 
@@ -345,35 +345,18 @@ public class Transactor extends UniversalActor  {
                     if (updatedWV != null)
                         new_wv = updatedWV;
 
-					try {
-						FileInputStream fileIn = new FileInputStream("./"+name.charAt(name.length()-1)+".ser");
-						ByteArrayOutputStream bos = new ByteArrayOutputStream();
-						byte[] buffer = new byte[1024];
-						int readbytes = fileIn.read(buffer);
-                        // Convert to byte array to send state to system for creation
-						while (readbytes!=-1) {
-							bos.write(buffer, 0, readbytes);
-							readbytes = fileIn.read(buffer);
-						}
-						byte[] savedState = bos.toByteArray();
-						fileIn.close();
-                        
-                        ActorMemory mem = getActorMemory();
-                        Object[] reloadArgs = { savedState, new_wv, mailbox, pendingMessages, unresolvedTokens, mem };
-                        Message reloadMsg = new Message(self, localSystem, "reloadTransactor", reloadArgs, null, null, false);
-                        localSystem.send(reloadMsg);
-                       
-                        // For GC purposes, full GC may not be supported or function correctly
-                        this.forceAllRefSilent();
+                    Transactor.State savedState = (Transactor.State) ServiceFactory.getTStorage().get(USL);
 
-                        // This stops this states thread to cause this actor to "die" 
-                        this.rollingback = true;
-					}
-					catch (IOException i) {
-						i.printStackTrace();
-						return;
-					}
+                    ActorMemory mem = getActorMemory();
+                    Object[] reloadArgs = { savedState, new_wv, mailbox, pendingMessages, unresolvedTokens, mem };
+                    Message reloadMsg = new Message(self, localSystem, "reloadTransactor", reloadArgs, null, null, false);
+                    localSystem.send(reloadMsg);
 
+                    // For GC purposes, full GC may not be supported or function correctly
+                    this.forceAllRefSilent();
+
+                    // This stops this states thread to cause this actor to "die" 
+                    this.rollingback = true;
 				}
                 /*** [rol3] ***/
 				else {

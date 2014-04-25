@@ -541,7 +541,7 @@ public class Message implements java.io.Serializable {
           if (arguments==null || arguments.length==0) {
             return;
           }
-          if (this.methodName.equals("addActor")) {return;}
+          if (this.methodName.equals("addActor") || this.methodName.equals("reloadTransactor")) {return;}
 
           try {
             ByteArrayOutputStream bos = new ByteArrayOutputStream();

@@ -34,7 +34,7 @@ public interface SystemService extends EnvironmentalService {
                 public void createActor(UAN uan, UAL ual, String className);
 		public void removePlaceholder(UAN uan, UAL ual);
                 public void addActor(byte[] actorBytes);
-    public void reloadTransactor(byte[] actorBytes, Worldview new_wv, Vector new_mailbox, Hashtable new_pendingMessages, Vector new_unresolvedTokens, ActorMemory new_stateMemory);
+    public void reloadTransactor(Object actorState, Worldview new_wv, Vector new_mailbox, Hashtable new_pendingMessages, Vector new_unresolvedTokens, ActorMemory new_stateMemory);
 
 	}
 }

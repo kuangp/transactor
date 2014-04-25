@@ -317,46 +317,32 @@ public class WWCSystem extends UniversalActor implements SystemService {
                     ServiceFactory.getTheater().registerSecurityEntry(actor.getUAN().toString());
                     actor.start();
                   }
-        public void reloadTransactor(byte[] actorBytes, Worldview new_wv, Vector new_mailbox, Hashtable new_pendingMessages, Vector new_unresolvedTokens, ActorMemory new_stateMemory) {
-                  Transactor.State actor;
-                  try {
-                    ByteArrayInputStream bis = new ByteArrayInputStream(actorBytes);
-                    ObjectInputStream inStream;
 
-                    inStream = new ObjectInputStream(bis);
-                    actor= ((Transactor.State) inStream.readObject());
-                    inStream.close();
-                    bis.close();
-                  }
-                    catch (Exception e) {
-                      RunTime.deletedUniversalActor();
-                      System.err.println("WWCSystem Class, reloadTransactor() method:Error on deserializing an actor: " + e);
-			          System.err.println ("Please make sure that the theater has the proper CLASSPATH set.");
-                      return;
-                    }
+        public void reloadTransactor(Object actorState, Worldview new_wv, Vector new_mailbox, Hashtable new_pendingMessages, Vector new_unresolvedTokens, ActorMemory new_stateMemory) {
+                  Transactor.State actor = ((Transactor.State) actorState);
+                  
+                  actor.setWV(new_wv);
+                  actor.mailbox = new_mailbox;
+                  actor.pendingMessages = new_pendingMessages;
+                  actor.unresolvedTokens = new_unresolvedTokens;
+                  actor.setActorMemory(new_stateMemory);
+                  actor.getActorMemory().getInverseList().putInverseReference("rmsp://me");
+                  actor.getActorMemory().setPendingMessages(new_pendingMessages);
 
-                    actor.setWV(new_wv);
-                    actor.mailbox = new_mailbox;
-                    actor.pendingMessages = new_pendingMessages;
-                    actor.unresolvedTokens = new_unresolvedTokens;
-                    actor.setActorMemory(new_stateMemory);
-                    actor.getActorMemory().getInverseList().putInverseReference("rmsp://me");
-                    actor.getActorMemory().setPendingMessages(new_pendingMessages);
-
-                    Actor previous = namingService.remove(actor.getUAN(), actor.getUAL());
-                    if (previous instanceof Rollbackholder) {
+                  Actor previous = namingService.remove(actor.getUAN(), actor.getUAL());
+                  if (previous instanceof Rollbackholder) {
                       ((Rollbackholder)previous).sendAllMessages();
-                    }
-                    RunTime.deletedUniversalActor();
+                  }
+                  RunTime.deletedUniversalActor();
 
-                    namingService.setEntry(actor.getUAN(), actor.getUAL(), actor);
-                    if (actor.getUAN() != null) {
-                        namingService.update(actor.getUAN(), actor.getUAL());
-                        //update security info
-                        ServiceFactory.getTheater().registerSecurityEntry(actor.getUAN().toString());
-                    }
+                  namingService.setEntry(actor.getUAN(), actor.getUAL(), actor);
+                  if (actor.getUAN() != null) {
+                      namingService.update(actor.getUAN(), actor.getUAL());
+                      //update security info
+                      ServiceFactory.getTheater().registerSecurityEntry(actor.getUAN().toString());
+                  }
 
-                    actor.start();
+                  actor.start();
         }
 	}
 }

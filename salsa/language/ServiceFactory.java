@@ -15,6 +15,7 @@ import salsa.resources.StorageService;
 import salsa.resources.SystemService;
 import salsa.resources.InputService;
 import salsa.resources.Dummy;
+import transactor.resources.TStorageService;
 import gc.LocalCollector;
 import gc.serverGC.GCAgent;
 
@@ -38,6 +39,7 @@ import gc.serverGC.GCAgent;
  *	-Doutput=wwc.resources.StandardOutput
  *	-Derror=wwc.resources.StandardError
  *	-Dstorage=wwc.resources.StandardDisk
+ *	-DTstorage=transactor.resources.TestTStorageService
  *
  * Classes defined in system properties must have no argument contructors and
  * should implement the their respective service interface.
@@ -58,6 +60,7 @@ public class ServiceFactory {
         private static LocalCollector           GC              = null;
         private static GCAgent                  gcAgent         = null;
         private static ActorReference           dummySVC        = null;
+        private static TStorageService          Tstorage = null;
 
 	//default service classes
 	private static String			theaterClass	= "wwc.messaging.Theater";
@@ -75,6 +78,7 @@ public class ServiceFactory {
         private static String			GCClass	        = "gc.serverGC.SLocalPRID";
         private static String			GCAgentClass	= "gc.serverGC.GCAgent";
         private static String                   DummySVCClass   = "salsa.resources.Dummy";
+        private static String                   TstorageClass = "transactor.resources.TestTStorageService";
 
 	//Applets cannot access System, so we have to make sure
 	//this theater is not an AppletTheater before doing so.
@@ -95,7 +99,8 @@ public class ServiceFactory {
         public synchronized static void setInputClass(String input)			{ ServiceFactory.inputClass	= input; }
 	public synchronized static void setErrorClass(String error)			{ ServiceFactory.errorClass	= error; }
 	public synchronized static void setStorageClass(String storage)			{ ServiceFactory.storageClass	= storage; }
-	public synchronized static void setSystemClass(String system)			{ ServiceFactory.systemClass	= system; }
+    public synchronized static void setSystemClass(String system)			{ ServiceFactory.systemClass	= system; }
+	public synchronized static void setTStorageClass(String Tstorage)			{ ServiceFactory.TstorageClass	= Tstorage; }
 
 	public synchronized static void setTheater(TheaterService theater)		{ ServiceFactory.theater	= theater; }
 	public synchronized static void setTransport(TransportService transport)	{ ServiceFactory.transport	= transport; }
@@ -393,6 +398,26 @@ public class ServiceFactory {
 		return naming;
 	}
 
+	/**
+	 * Returns the TstorageImpl.
+	 * @return TStorageService
+	 */
+	public synchronized static TStorageService getTStorage() {
+		if (Tstorage == null) {
+			// Check for the naming service.
+			String className = null;
+			if (!applet) className = System.getProperty( "Tstorage" );
+			if (className == null) className = TstorageClass;
+
+			try {
+				Tstorage = (TStorageService)Class.forName( className ).newInstance();
+			} catch (Exception e) {
+				printErrorMessage(className, e);
+			}
+		}
+
+		return Tstorage;
+	}
 	/**
 	 * Returns the theaterImpl.
 	 * @return TheaterService
