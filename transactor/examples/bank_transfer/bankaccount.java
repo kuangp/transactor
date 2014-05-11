@@ -287,8 +287,9 @@ public class bankaccount extends Transactor {
 				this.sendMsg("done", response, atm);
 			}
 }		}
-		public void pingreq(Transactor requester) {
-			this.sendMsg("ping", new Object[0], requester);
+		public void pingreq(Transactor requester1, Transactor requester2) {
+			Object[] req = { requester2 };
+			this.sendMsg("pingreq", req, requester1);
 		}
 		public void ping() {
 			this.checkpoint();

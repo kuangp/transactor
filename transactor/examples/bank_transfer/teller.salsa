@@ -8,8 +8,9 @@ behavior teller extends Transactor {
     private bankaccount inacct;
     private bankaccount outacct;
     private int acks = 0;
+    private Object acked;
 
-    public teller(bankaccount in, bankaccount out, int num_acks){
+    public teller(bankaccount in, bankaccount out, int num_acks) {
         super(self);
         this.setTState("acks", num_acks);
         this.setTState("inacct", in);
@@ -18,36 +19,38 @@ behavior teller extends Transactor {
         this.checkpoint(); return;
     }
 
-    public void transfer(int delta){
+    public void transfer(int delta, Transactor acct_pinger) {
         // Transactor operations should not be messages, but instead
         // method calls under implementation to be executed sequentially 
+        this.sendMsg("ping", new Object[0], acct_pinger);
         Object[] in_params = {delta, this.self()};
         Object[] out_params = {-1*delta, this.self()};
         this.sendMsg("adj", in_params, ((Transactor)this.getTState("inacct")));
         this.sendMsg("adj", out_params, ((Transactor)this.getTState("outacct")));
     }
 
-    public void done(String msg){
+    public void done(String msg) {
         standardOutput<-println(msg);
         this.setTState("acks", ((int)this.getTState("acks")) + 1); // Setting ack
         if (((int)this.getTState("acks")) == 2){
             this.stabilize();
-            Object[] p1 = {((Transactor)this.getTState("inacct"))};
-            Object[] p2 = {((Transactor)this.getTState("outacct"))};
-            this.sendMsg("pingreq", p1, ((Transactor)this.getTState("outacct")));
-            this.sendMsg("pingreq", p2, ((Transactor)this.getTState("inacct")));
-            Object[] p3 = {this.self()};
-            this.sendMsg("pingreq", p3, ((Transactor)this.getTState("inacct")));
-            this.sendMsg("pingreq", p3, ((Transactor)this.getTState("outacct")));
         }
     }
 
-    public void ping() {
+    public void pingreq(Transactor requester) {
+        this.sendMsg("ping", new Object[0], requester);
         this.checkpoint(); return;
     }
 
-    public void printData(){
-        System.out.println("Acks: " + ((int)this.getTState("acks")));
+    public void ping(Transactor acct_pinger) {
+        if (this.setTState("acked", null)) 
+            this.sendMsg("ping", new Object[0], acct_pinger);
+        else
+            this.sendMsg("pingreq", new Object[0], acct_pinger);
+    }
+
+    public void printData() {
+        System.out.println("Acks: " + acks);
         System.out.println(this.getString());
     }   
 }

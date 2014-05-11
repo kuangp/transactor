@@ -34,7 +34,7 @@ import salsa.resources.ActorService;
 import transactor.language.*;
 import java.util.*;
 
-public class teller extends Transactor {
+public class pinger extends Transactor {
 	public static void main(String args[]) {
 		UAN uan = null;
 		UAL ual = null;
@@ -69,7 +69,7 @@ public class teller extends Transactor {
 			ual = new UAL( ServiceFactory.getTheater().getLocation() + System.getProperty("identifier"));
 		}
 		RunTime.receivedMessage();
-		teller instance = (teller)new teller(uan, ual,null).construct();
+		pinger instance = (pinger)new pinger(uan, ual,null).construct();
 		gc.WeakReference instanceRef=new gc.WeakReference(uan,ual);
 		{
 			Object[] _arguments = { args };
@@ -82,18 +82,18 @@ public class teller extends Transactor {
 		RunTime.finishedProcessingMessage();
 	}
 
-	public static ActorReference getReferenceByName(UAN uan)	{ return new teller(false, uan); }
-	public static ActorReference getReferenceByName(String uan)	{ return teller.getReferenceByName(new UAN(uan)); }
-	public static ActorReference getReferenceByLocation(UAL ual)	{ return new teller(false, ual); }
+	public static ActorReference getReferenceByName(UAN uan)	{ return new pinger(false, uan); }
+	public static ActorReference getReferenceByName(String uan)	{ return pinger.getReferenceByName(new UAN(uan)); }
+	public static ActorReference getReferenceByLocation(UAL ual)	{ return new pinger(false, ual); }
 
-	public static ActorReference getReferenceByLocation(String ual)	{ return teller.getReferenceByLocation(new UAL(ual)); }
-	public teller(boolean o, UAN __uan)	{ super(false,__uan); }
-	public teller(boolean o, UAL __ual)	{ super(false,__ual); }
-	public teller(UAN __uan,UniversalActor.State sourceActor)	{ this(__uan, null, sourceActor); }
-	public teller(UAL __ual,UniversalActor.State sourceActor)	{ this(null, __ual, sourceActor); }
-	public teller(UniversalActor.State sourceActor)		{ this(null, null, sourceActor);  }
-	public teller()		{  }
-	public teller(UAN __uan, UAL __ual, Object obj) {
+	public static ActorReference getReferenceByLocation(String ual)	{ return pinger.getReferenceByLocation(new UAL(ual)); }
+	public pinger(boolean o, UAN __uan)	{ super(false,__uan); }
+	public pinger(boolean o, UAL __ual)	{ super(false,__ual); }
+	public pinger(UAN __uan,UniversalActor.State sourceActor)	{ this(__uan, null, sourceActor); }
+	public pinger(UAL __ual,UniversalActor.State sourceActor)	{ this(null, __ual, sourceActor); }
+	public pinger(UniversalActor.State sourceActor)		{ this(null, null, sourceActor);  }
+	public pinger()		{  }
+	public pinger(UAN __uan, UAL __ual, Object obj) {
 		//decide the type of sourceActor
 		//if obj is null, the actor must be the startup actor.
 		//if obj is an actorReference, this actor is created by a remote actor
@@ -116,7 +116,7 @@ public class teller extends Transactor {
 			      setSource(sourceActor.getUAN(), sourceActor.getUAL());
 			      activateGC();
 			    }
-			    createRemotely(__uan, __ual, "transactor.examples.bank_transfer.teller", sourceRef);
+			    createRemotely(__uan, __ual, "transactor.examples.bank_transfer.pinger", sourceRef);
 			  }
 
 			  // local creation
@@ -174,8 +174,8 @@ public class teller extends Transactor {
 		}
 	}
 
-	public UniversalActor construct (bankaccount in, bankaccount out, int num_acks) {
-		Object[] __arguments = { in, out, new Integer(num_acks) };
+	public UniversalActor construct (bankaccount acct1, bankaccount acct2, teller atm) {
+		Object[] __arguments = { acct1, acct2, atm };
 		this.send( new Message(this, this, "construct", __arguments, null, null) );
 		return this;
 	}
@@ -187,11 +187,11 @@ public class teller extends Transactor {
 	}
 
 	public class State extends Transactor.State {
-		public teller self;
+		public pinger self;
 		public void updateSelf(ActorReference actorReference) {
-			((teller)actorReference).setUAL(getUAL());
-			((teller)actorReference).setUAN(getUAN());
-			self = new teller(false,getUAL());
+			((pinger)actorReference).setUAL(getUAL());
+			((pinger)actorReference).setUAN(getUAN());
+			self = new pinger(false,getUAL());
 			self.setUAN(getUAN());
 			self.setUAL(getUAL());
 			self.activateGC();
@@ -203,7 +203,7 @@ public class teller extends Transactor {
 
 		public State(UAN __uan, UAL __ual) {
 			super(__uan, __ual);
-			addClassName( "transactor.examples.bank_transfer.teller$State" );
+			addClassName( "transactor.examples.bank_transfer.pinger$State" );
 			addMethodsForClasses();
 		}
 
@@ -264,51 +264,31 @@ public class teller extends Transactor {
 			}
 		}
 
-		bankaccount inacct;
-		bankaccount outacct;
-		int acks = 0;
-		Object acked;
-		public void construct(bankaccount in, bankaccount out, int num_acks){
-			super.construct( (((teller)self)) );
-			this.setTState("acks", num_acks);
-			this.setTState("inacct", in);
-			this.setTState("outacct", out);
+		bankaccount acct1;
+		bankaccount acct2;
+		teller atm;
+		public void construct(bankaccount acct1, bankaccount acct2, teller atm){
+			super.construct( (((pinger)self)) );
+			this.setTState("acct1", acct1);
+			this.setTState("acct2", acct2);
+			this.setTState("atm", atm);
+		}
+		public void init() {
 			this.stabilize();
 			this.checkpoint();
-						return;
 		}
-		public void transfer(int delta, Transactor acct_pinger) {
-			this.sendMsg("ping", new Object[0], acct_pinger);
-			Object[] in_params = { delta, this.self() };
-			Object[] out_params = { -1*delta, this.self() };
-			this.sendMsg("adj", in_params, ((Transactor)this.getTState("inacct")));
-			this.sendMsg("adj", out_params, ((Transactor)this.getTState("outacct")));
+		public void ping() {
+			this.stabilize();
+			Object[] me = { this.self() };
+			this.sendMsg("ping", me, ((Transactor)this.getTState("atm")));
 		}
-		public void done(String msg) {
-			{
-				// standardOutput<-println(msg)
-				{
-					Object _arguments[] = { msg };
-					Message message = new Message( self, standardOutput, "println", _arguments, null, null );
-					__messages.add( message );
-				}
-			}
-			this.setTState("acks", ((int)this.getTState("acks"))+1);
-			if (((int)this.getTState("acks"))==2) {{
-				this.stabilize();
-			}
-}		}
-		public void pingreq(Transactor requester) {
-			this.sendMsg("ping", new Object[0], requester);
-			this.checkpoint();
-			return;
+		public void pingreq() {
+			Object[] ping1 = { ((Transactor)this.getTState("atm")), ((Transactor)this.getTState("acct2")) };
+			Object[] ping2 = { ((Transactor)this.getTState("atm")), ((Transactor)this.getTState("acct1")) };
+			this.sendMsg("pingreq", ping1, ((Transactor)this.getTState("acct1")));
+			this.sendMsg("pingreq", ping2, ((Transactor)this.getTState("acct2")));
 		}
-		public void ping(Transactor acct_pinger) {
-			if (this.setTState("acked", null)) {this.sendMsg("ping", new Object[0], acct_pinger);
-}			else {this.sendMsg("pingreq", new Object[0], acct_pinger);
-}		}
 		public void printData() {
-			System.out.println("Acks: "+acks);
 			System.out.println(this.getString());
 		}
 	}

@@ -176,7 +176,7 @@ public class Transactor extends UniversalActor  {
                 responseAck(msg);
                 wv = union;
                 wv.setRootSet(new HashSet());
-                //System.out.println("message wv: \n" + msg_wv + "\n\n");
+                System.out.println("message wv: \n" + msg_wv + "\n\n");
 			}
             /*** [rcv1] ***/
 			else {

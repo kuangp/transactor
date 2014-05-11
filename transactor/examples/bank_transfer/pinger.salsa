@@ -1,0 +1,43 @@
+module transactor.examples.bank_transfer;
+
+import transactor.language.*;
+import java.util.*;
+
+behavior pinger extends Transactor {
+
+    private bankaccount acct1;
+    private bankaccount acct2;
+    private teller atm;
+
+    public pinger(bankaccount acct1, bankaccount acct2, teller atm) {
+        super(self);
+        this.setTState("acct1", acct1);
+        this.setTState("acct2", acct2);
+        this.setTState("atm", atm);
+    }
+
+    public void init() {
+        this.stabilize();
+        this.checkpoint();
+    }
+
+    public void ping() {
+        this.stabilize();
+        Object[] me = {this.self()};
+        this.sendMsg("ping", me, ((Transactor)this.getTState("atm")));
+    }
+
+    public void pingreq() {
+        Object[] ping1 = {((Transactor)this.getTState("atm")), ((Transactor)this.getTState("acct2"))};
+        Object[] ping2 = {((Transactor)this.getTState("atm")), ((Transactor)this.getTState("acct1"))};
+        this.sendMsg("pingreq", ping1, ((Transactor)this.getTState("acct1")));
+        this.sendMsg("pingreq", ping2, ((Transactor)this.getTState("acct2")));
+    }
+
+    public void printData() {
+        System.out.println(this.getString());
+    }
+}
+                
+
+        

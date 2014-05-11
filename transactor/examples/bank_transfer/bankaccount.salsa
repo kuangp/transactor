@@ -7,14 +7,14 @@ behavior bankaccount extends Transactor {
 
     private int bal = 0;
     
-    public bankaccount(int balance){
+    public bankaccount(int balance) {
         super(self);
         this.setTState("bal", balance);
         this.stabilize();
         this.checkpoint(); return;
     }
 
-    public void adj(int delta, Transactor atm){
+    public void adj(int delta, Transactor atm) {
         this.setTState("bal", ((int)this.getTState("bal")) + delta);
         Object[] response = new Object[1];
         if (((int)this.getTState("bal")) < 0){
@@ -29,15 +29,16 @@ behavior bankaccount extends Transactor {
         }
     }
 
-    public void pingreq(Transactor requester){
-        this.sendMsg("ping", new Object[0], requester);
+    public void pingreq(Transactor requester1, Transactor requester2) {
+        Object[] req = {requester2};
+        this.sendMsg("pingreq", req, requester1);
     }
 
-    public void ping(){
+    public void ping() {
         this.checkpoint(); return;
     }
 
-    public void printData(){
+    public void printData() {
         System.out.println("Balance: " + ((int)this.getTState("bal")));
         System.out.println(this.getString());
     }

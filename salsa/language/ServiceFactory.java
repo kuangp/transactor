@@ -404,7 +404,6 @@ public class ServiceFactory {
 	 */
 	public synchronized static TStorageService getTStorage() {
 		if (Tstorage == null) {
-			// Check for the naming service.
 			String className = null;
 			if (!applet) className = System.getProperty( "Tstorage" );
 			if (className == null) className = TstorageClass;
