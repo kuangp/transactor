@@ -344,9 +344,9 @@ public class transfer extends Transactor {
 					Message message = new Message( self, acct_pinger, "printData", _arguments, token_2_7, token_2_8 );
 					__messages.add( message );
 				}
-				// atm<-transfer(500, savings, checking, acct_pinger)
+				// atm<-transfer(50, savings, checking, acct_pinger)
 				{
-					Object _arguments[] = { new Integer(500), savings, checking, acct_pinger };
+					Object _arguments[] = { new Integer(50), savings, checking, acct_pinger };
 					Message message = new Message( self, atm, "transfer", _arguments, token_2_8, token_2_9 );
 					__messages.add( message );
 				}

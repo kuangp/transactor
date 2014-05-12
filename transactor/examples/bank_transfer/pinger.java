@@ -282,6 +282,8 @@ public class pinger extends Transactor {
 			Object[] ping2 = { ((Transactor)this.getTState("atm")), ((Transactor)this.getTState("acct1")) };
 			this.sendMsg("pingreq", ping1, ((Transactor)this.getTState("acct1")));
 			this.sendMsg("pingreq", ping2, ((Transactor)this.getTState("acct2")));
+			this.checkpoint();
+			return;
 		}
 		public void printData() {
 			System.out.println(this.getString());

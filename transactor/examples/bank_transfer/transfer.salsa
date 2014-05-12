@@ -21,7 +21,7 @@ behavior transfer extends Transactor {
             atm<-printData() @
         standardOutput<-println("PINGER: ") @
             acct_pinger<-printData() @
-        atm<-transfer(500, savings, checking, acct_pinger) @
+        atm<-transfer(50, savings, checking, acct_pinger) @
         // wait for transactions to complete
         standardOutput<-println("===================================="):delay(new Integer(5000)) @
         standardOutput<-println("SAVINGS ACCOUNT: ") @
