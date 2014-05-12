@@ -161,12 +161,15 @@ public class Worldview implements Serializable {
                         HashSet<Worldview.Tuple<String, History> > transitive = new HashSet< >();
                         // For dependency cycle detection
                         HashSet<Worldview.Tuple<String, History> > found = new HashSet< >();
+                        // To remove a validated transitive dependency edges [OPTIMIZED UNION ALGORITHM]
+                        HashSet<Worldview.Tuple<Worldview.Tuple<String, History>, Worldview.Tuple<String, History> > > remove = new HashSet< >();
                         transitive.add(current);
                         while (transitive.size() > 0) {
                             HashSet<Worldview.Tuple<String, History> > new_transitive = new HashSet< >();
                             for (Worldview.Tuple<String, History> find : transitive) {
                                 for (Worldview.Tuple<Worldview.Tuple<String, History>, Worldview.Tuple<String, History> > e : E) {
                                     if (e.getFirst().equals(find) && !found.contains(e.getSecond())) {
+                                        remove.add(e);
                                         new_transitive.add(e.getSecond());
                                         History updated_hist = new History(e.getSecond().getSecond());
                                         updated_hist.stabilize();
@@ -177,6 +180,9 @@ public class Worldview implements Serializable {
                             found.addAll(transitive);
                             transitive.clear();
                             transitive.addAll(new_transitive);
+                        }
+                        for (Worldview.Tuple<Worldview.Tuple<String, History>, Worldview.Tuple<String, History> > e : remove) {
+                            E.remove(e);
                         }
                     }
                     V.get(t).remove(first);
@@ -195,7 +201,7 @@ public class Worldview implements Serializable {
         HashMap<String, HashSet<String> > new_depGraph = new HashMap< >();
         HashSet<String> new_rootSet = new HashSet<>();
         // Add transactor-history mappings to new histMap; each transactor should now only map to one updated history
-        // NOTE: inner loop should only iterate once 
+        // NOTE: inner loop should only iterate once, V.get(t) returns a list so we loop that list which should contain only the updated history version 
         for (String t : V.keySet())
             for (History h : V.get(t))
                 new_histMap.put(t, h);
