@@ -174,14 +174,8 @@ public class teller extends Transactor {
 		}
 	}
 
-	public UniversalActor construct (bankaccount in, bankaccount out, int num_acks) {
-		Object[] __arguments = { in, out, new Integer(num_acks) };
-		this.send( new Message(this, this, "construct", __arguments, null, null) );
-		return this;
-	}
-
-	public UniversalActor construct() {
-		Object[] __arguments = { };
+	public UniversalActor construct () {
+		Object[] __arguments = {  };
 		this.send( new Message(this, this, "construct", __arguments, null, null) );
 		return this;
 	}
@@ -206,8 +200,6 @@ public class teller extends Transactor {
 			addClassName( "transactor.examples.bank_transfer.teller$State" );
 			addMethodsForClasses();
 		}
-
-		public void construct() {}
 
 		public void process(Message message) {
 			Method[] matches = getMatches(message.getMethodName());
@@ -264,25 +256,21 @@ public class teller extends Transactor {
 			}
 		}
 
-		bankaccount inacct;
-		bankaccount outacct;
 		int acks = 0;
 		Object acked;
-		public void construct(bankaccount in, bankaccount out, int num_acks){
+		public void construct(){
 			super.construct( (((teller)self)) );
-			this.setTState("acks", num_acks);
-			this.setTState("inacct", in);
-			this.setTState("outacct", out);
 			this.stabilize();
 			this.checkpoint();
 						return;
 		}
-		public void transfer(int delta, Transactor acct_pinger) {
-			this.sendMsg("ping", new Object[0], acct_pinger);
+		public void transfer(int delta, bankaccount inacct, bankaccount outacct, pinger acct_pinger) {
+			Object[] accts = { inacct, outacct };
+			this.sendMsg("startPing", accts, acct_pinger);
 			Object[] in_params = { delta, this.self() };
 			Object[] out_params = { -1*delta, this.self() };
-			this.sendMsg("adj", in_params, ((Transactor)this.getTState("inacct")));
-			this.sendMsg("adj", out_params, ((Transactor)this.getTState("outacct")));
+			this.sendMsg("adj", in_params, inacct);
+			this.sendMsg("adj", out_params, outacct);
 		}
 		public void done(String msg) {
 			{

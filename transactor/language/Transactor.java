@@ -109,7 +109,7 @@ public class Transactor extends UniversalActor  {
                 this.name = self.getUAN().toString();
 			else 
             this.name = self.getUAL().toString();
-            try { this.USL = new URI("file:///Users/carrykuang/Documents/transactor/"+name.charAt(name.length()-1)+".ser"); }
+            try { this.USL = new URI("file:///Users/carrykuang/Documents/transactor/"+name.substring(name.lastIndexOf("/") + 1)+".ser"); }
             // TODO: Handle malformed uri
             catch (Exception e) { e.printStackTrace(); }
 			wv = new Worldview();

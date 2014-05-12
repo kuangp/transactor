@@ -9,20 +9,24 @@ behavior pinger extends Transactor {
     private bankaccount acct2;
     private teller atm;
 
-    public pinger(bankaccount acct1, bankaccount acct2, teller atm) {
+    public pinger() {
         super(self);
-        this.setTState("acct1", acct1);
-        this.setTState("acct2", acct2);
-        this.setTState("atm", atm);
     }
 
-    public void init() {
+    public void init(teller atm) {
+        this.setTState("atm", atm);
         this.stabilize();
         this.checkpoint();
     }
 
-    public void ping() {
+    public void startPing(bankaccount acct1, bankaccount acct2) {
+        this.setTState("acct1", acct1);
+        this.setTState("acct2", acct2);
         this.stabilize();
+        this.sendMsg("ping", new Object[0], this.self());
+    }
+
+    public void ping() {
         Object[] me = {this.self()};
         this.sendMsg("ping", me, ((Transactor)this.getTState("atm")));
     }

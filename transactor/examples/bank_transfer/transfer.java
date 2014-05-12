@@ -269,8 +269,8 @@ public class transfer extends Transactor {
 		public void act(String[] args) {
 			bankaccount savings = ((bankaccount)new bankaccount(this).construct(100));
 			bankaccount checking = ((bankaccount)new bankaccount(this).construct(100));
-			teller atm = ((teller)new teller(this).construct(savings, checking, 0));
-			pinger acct_pinger = ((pinger)new pinger(this).construct(savings, checking, atm));
+			teller atm = ((teller)new teller(this).construct());
+			pinger acct_pinger = ((pinger)new pinger(this).construct());
 			{
 				Token token_2_0 = new Token();
 				Token token_2_1 = new Token();
@@ -290,9 +290,9 @@ public class transfer extends Transactor {
 				Token token_2_15 = new Token();
 				Token token_2_16 = new Token();
 				Token token_2_17 = new Token();
-				// acct_pinger<-init()
+				// acct_pinger<-init(atm)
 				{
-					Object _arguments[] = {  };
+					Object _arguments[] = { atm };
 					Message message = new Message( self, acct_pinger, "init", _arguments, null, token_2_0 );
 					__messages.add( message );
 				}
@@ -344,9 +344,9 @@ public class transfer extends Transactor {
 					Message message = new Message( self, acct_pinger, "printData", _arguments, token_2_7, token_2_8 );
 					__messages.add( message );
 				}
-				// atm<-transfer(101, acct_pinger)
+				// atm<-transfer(500, savings, checking, acct_pinger)
 				{
-					Object _arguments[] = { new Integer(101), acct_pinger };
+					Object _arguments[] = { new Integer(500), savings, checking, acct_pinger };
 					Message message = new Message( self, atm, "transfer", _arguments, token_2_8, token_2_9 );
 					__messages.add( message );
 				}

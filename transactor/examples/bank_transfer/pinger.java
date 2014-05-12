@@ -174,14 +174,8 @@ public class pinger extends Transactor {
 		}
 	}
 
-	public UniversalActor construct (bankaccount acct1, bankaccount acct2, teller atm) {
-		Object[] __arguments = { acct1, acct2, atm };
-		this.send( new Message(this, this, "construct", __arguments, null, null) );
-		return this;
-	}
-
-	public UniversalActor construct() {
-		Object[] __arguments = { };
+	public UniversalActor construct () {
+		Object[] __arguments = {  };
 		this.send( new Message(this, this, "construct", __arguments, null, null) );
 		return this;
 	}
@@ -206,8 +200,6 @@ public class pinger extends Transactor {
 			addClassName( "transactor.examples.bank_transfer.pinger$State" );
 			addMethodsForClasses();
 		}
-
-		public void construct() {}
 
 		public void process(Message message) {
 			Method[] matches = getMatches(message.getMethodName());
@@ -267,18 +259,21 @@ public class pinger extends Transactor {
 		bankaccount acct1;
 		bankaccount acct2;
 		teller atm;
-		public void construct(bankaccount acct1, bankaccount acct2, teller atm){
+		public void construct(){
 			super.construct( (((pinger)self)) );
-			this.setTState("acct1", acct1);
-			this.setTState("acct2", acct2);
-			this.setTState("atm", atm);
 		}
-		public void init() {
+		public void init(teller atm) {
+			this.setTState("atm", atm);
 			this.stabilize();
 			this.checkpoint();
 		}
-		public void ping() {
+		public void startPing(bankaccount acct1, bankaccount acct2) {
+			this.setTState("acct1", acct1);
+			this.setTState("acct2", acct2);
 			this.stabilize();
+			this.sendMsg("ping", new Object[0], this.self());
+		}
+		public void ping() {
 			Object[] me = { this.self() };
 			this.sendMsg("ping", me, ((Transactor)this.getTState("atm")));
 		}
