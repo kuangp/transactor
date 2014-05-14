@@ -175,6 +175,8 @@ public class Worldview implements Serializable {
                                         updated_hist.stabilize();
                                         V.get(e.getSecond().getFirst()).add(updated_hist);
                                     }
+                                    if (e.getSecond().equals(find)) 
+                                        remove.add(e);
                                 }
                             }
                             found.addAll(transitive);

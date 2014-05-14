@@ -265,7 +265,7 @@ public class bankaccount extends Transactor {
 		}
 
 		int bal = 0;
-		public void construct(int balance){
+		void construct(int balance){
 			super.construct( (((bankaccount)self)) );
 			this.setTState("bal", balance);
 			this.stabilize();
