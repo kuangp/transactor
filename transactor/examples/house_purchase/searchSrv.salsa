@@ -1,0 +1,31 @@
+module transactor.examples.house_purchase;
+
+import transactor.language.*;
+import java.util.*;
+
+// Proxy
+behavior searchSrv extends Transactor {
+
+    private HashMap titlesDB;
+
+    public searchSrv(HashMap titlesInfo) { 
+        super(self);
+        this.setTState("titlesDB", titlesInfo);
+    }
+   
+    public void initialize() {
+        this.stabilize();
+        this.checkpoint(); return;
+    }
+
+    public void reqSearch(String houseId, Transactor customer) {
+        this.stabilize();
+        Object[] title = {((HashMap)this.getTState("titlesDB")).get(houseId)};
+        this.sendMsg("titleResp", title, customer); 
+    }
+
+    public void printString(){
+        System.out.println("SEARCHER:\n" + this.getString() + "\n\n");
+    }   
+
+}

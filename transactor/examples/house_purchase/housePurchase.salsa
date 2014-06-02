@@ -1,0 +1,80 @@
+module transactor.examples.house_purchase;
+
+import transactor.language.*;
+import java.util.*;
+
+behavior housePurchase extends Transactor {
+
+    private buySrv buyer;
+    private searchSrv searcher;
+    private sellSrv seller;
+    private apprSrv appraiser;
+    private lendSrv lender;
+    private verifySrv verifier;
+    private creditDB creditAgency;
+    
+    public housePurchase() {
+        super(self);
+    }
+
+    void initialize() {
+        /*** BEGIN SALSA CODE ***/
+        HashMap titles = new HashMap();
+        titles.put("1234", "title1234");
+        titles.put("5678", "title5678");
+        searcher = new searchSrv(titles);
+
+        HashMap specs = new HashMap();
+        specs.put("1234", "spec1234");
+        specs.put("5678", "spec5678");
+        HashMap prices = new HashMap();
+        prices.put("1234", 100);
+        prices.put("5678", 200);
+        seller = new sellSrv(specs, prices);
+
+        verifier = new verifySrv(specs, prices);
+        appraiser = new apprSrv();
+        creditAgency = new creditDB();
+        lender = new lendSrv();
+        buyer = new buySrv(searcher, appraiser, seller, lender, verifier, creditAgency);
+
+        searcher<-initialize() @
+            seller<-initialize() @
+            verifier<-initialize() @
+            appraiser<-initialize() @
+            creditAgency<-initialize() @
+            lender<-initialize() @
+            buyer<-initialize() @
+            seller<-printString() @
+            verifier<-printString() @
+            appraiser<-printString() @
+            creditAgency<-printString() @
+            lender<-printString() @
+            buyer<-printString() @
+            self<-purchase() @
+            standardOutput<-println("==================================="):delay(new Integer(5000)) @
+            seller<-printString() @
+            verifier<-printString() @
+            appraiser<-printString() @
+            creditAgency<-printString() @
+            lender<-printString() @
+            buyer<-printString();
+
+        /*** END SALSA CODE ***/
+    }
+
+    void purchase() {
+        this.stabilize();
+
+        Transactor[] participants = {((Transactor)this.getTState("searcher")), ((Transactor)this.getTState("seller")), ((Transactor)this.getTState("verifier")), ((Transactor)this.getTState("appraiser")), ((Transactor)this.getTState("lender")), ((Transactor)this.getTState("creditAgency")), ((Transactor)this.getTState("buyer"))};
+
+        Object[] purchase = {"1234"};
+        this.startTransaction(participants, ((buySrv)this.getTState("buyer")), "newHousePurchase", purchase);
+
+    }
+
+    void act(String[] args) {
+        self<-initialize();
+    }
+}
+

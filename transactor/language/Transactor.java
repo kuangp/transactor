@@ -92,6 +92,9 @@ public class Transactor extends UniversalActor  {
 
         // Transactor Universal Storage Location: URI that locates where a persistent state is saved and identifies the protocol used to save/load states from stable storage to be used by the TStorageService
         private URI USL;
+
+        // Transaction director aka the pinger used to reconcile dependency information within a set of participants of a transaction
+        public Pinger transDirector;
         
         /* 
          * Super constructor must be called from subclasses of transactors
@@ -172,11 +175,11 @@ public class Transactor extends UniversalActor  {
             /*** [rcv2] ***/
 			else if (union.invalidates(msg_wv.getHistMap(), msg_wv.getRootSet())) {
                 // Message is invalidate so we send ack and ignore
-                System.out.println("message invalidated~~~~~~~~~~~~\n"+msg+"\n");
+                //System.out.println("message invalidated~~~~~~~~~~~~\n"+msg+"\n");
                 responseAck(msg);
                 wv = union;
                 wv.setRootSet(new HashSet());
-                System.out.println("message wv: \n" + msg_wv + "\n\n");
+                //System.out.println("message wv: \n" + msg_wv + "\n\n");
 			}
             /*** [rcv1] ***/
 			else {
@@ -217,6 +220,8 @@ public class Transactor extends UniversalActor  {
          * newTActor -> returns new Transactor with dependencies set of parent and child 
          * Should be called as such:
          * [Transactor Class] [name] = (Transactor Class) this.newTActor(new [Transactor Class]([args]))
+         * NOTE: stabilize and checkpoint and msg sends are not supported within the constructor of a tranasactor and will produce unknown outcomes 
+         *       Stabilization and checkpoint should be place in a initialize message handler following transactor construction*
          */
         /*** [new] ***/
 		public Transactor newTActor(Transactor new_T) {
@@ -243,7 +248,7 @@ public class Transactor extends UniversalActor  {
             Object[] propInfo = {"highPriority"};
             msg.setProperty( "priority", propInfo );
             new_T.send(msg);
-
+        
 			return new_T;
 		}
 
@@ -395,14 +400,14 @@ public class Transactor extends UniversalActor  {
                         myField.setAccessible(true);
                         myField.set(this, newValue);
                     } catch (NoSuchFieldException f) { 
-                        System.out.println("no such field exception");
+                        System.out.println("[SETSTATE] no such field exception: " + field);
                         return false; 
                     } catch (IllegalAccessException g) { 
-                        System.out.println("illegal access exception 1");
+                        System.out.println("[SETSTATE] illegal access exception 1");
                         return false; 
                     }
                 } catch (IllegalAccessException g) { 
-                    System.out.println("illegal access exception 2");
+                    System.out.println("[SETSTATE] illegal access exception 2");
                     return false; 
                 }
 
@@ -437,14 +442,14 @@ public class Transactor extends UniversalActor  {
                     myField.setAccessible(true);
                     value = myField.get(this);
                 } catch (NoSuchFieldException f) { 
-                    System.out.println("no such field exception");
+                    System.out.println("[GETSTATE] no such field exception: " + field);
                     return null; 
                 } catch (IllegalAccessException g) { 
-                    System.out.println("illegal access exception 1");
+                    System.out.println("[GETSTATE] illegal access exception 1");
                     return null; 
                 }
             } catch (IllegalAccessException g) { 
-                System.out.println("illegal access exception 2");
+                System.out.println("[GETSTATE] illegal access exception 2");
                 System.out.println(g);
                 return null; 
             }
@@ -452,5 +457,28 @@ public class Transactor extends UniversalActor  {
 			wv.getRootSet().add(name);
             return value;
 		}
+
+        // NOTE: Sending the trigger message to self ot start the transaciton places its name in the root set
+        // which may be undesirable in certain circumstances...
+        public void transactionStart(String msg, Object[] msg_args, Pinger director){
+            this.setTState("transDirector", director);
+            this.sendMsg(msg, msg_args, this.self());
+        }
+
+        public void pingreq(Transactor[] pingreqs) {
+            for (Object t : pingreqs){
+                this.sendMsg("ping", new Object[0], (Transactor)t);
+            }
+            this.checkpoint(); return;
+        }
+
+        public void ping() {
+            this.checkpoint(); return;
+        }
+
+        public void startTransaction(Transactor[] participants, Transactor coordinator, String msg, Object[] msg_args){
+            Object[][] transaction = {{participants, coordinator, msg, msg_args}};
+            this.sendMsg("startTransaction", transaction, ServiceFactory.getTransDirector());
+        }
 	}
 }

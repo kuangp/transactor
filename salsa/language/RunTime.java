@@ -26,7 +26,7 @@ public class RunTime {
   //static int actors=0;
   static boolean started = false;
   static boolean initialized = false;
-  static boolean nogc=false;
+  static boolean nogc=true;
   static boolean nodie=false;
   static boolean gcverbose=false;
   static int gcInterval=20;

@@ -1,0 +1,81 @@
+module transactor.examples.house_purchase;
+
+import transactor.language.*;
+import java.util.*;
+
+behavior buySrv extends Transactor {
+
+    private searchSrv searcher;
+    private apprSrv appraiser;
+    private sellSrv seller;
+    private lendSrv lender;
+    private verifySrv verifier;
+    private creditDB creditHistory;
+    private String houseid;
+    private int price = 0;
+    private String title;
+    private String mortgage;
+
+    public buySrv(searchSrv searcher, apprSrv appraiser, sellSrv seller, lendSrv lender, verifySrv verifier, creditDB creditHistory) {
+        super(self);
+        this.setTState("searcher", searcher);
+        this.setTState("appraiser", appraiser);
+        this.setTState("seller", seller);
+        this.setTState("lender", lender);
+        this.setTState("verifier", verifier);
+        this.setTState("creditHistory", creditHistory);
+    }
+
+    public void initialize() {
+        this.stabilize();
+        this.checkpoint(); return;
+    }
+
+    public void newHousePurchase(String newHouseId) {
+        this.setTState("houseid", newHouseId);
+        Object[] request = {newHouseId, this.self(), ((sellSrv)this.getTState("seller")), ((verifySrv)this.getTState("verifier"))};
+        this.sendMsg("reqAppraisal", request, ((apprSrv)this.getTState("appraiser")));
+    }
+
+    public void appraisal(int newPrice) {
+        this.setTState("price", newPrice);
+        Object[] offer = {((String)this.getTState("houseid")), newPrice, this.self()};
+        this.sendMsg("offer", offer, ((sellSrv)this.getTState("seller")));
+        Object[] search = {((String)this.getTState("houseid")), this.self()};
+        this.sendMsg("reqSearch", search, ((searchSrv)this.getTState("searcher")));
+        Object[] lendreq = {((String)this.getTState("houseid")), this.self(), ((int)this.getTState("price")), ((apprSrv)this.getTState("appraiser")), ((creditDB)this.getTState("creditHistory"))};
+        this.sendMsg("reqMortgage", lendreq, ((lendSrv)this.getTState("lender")));
+    }
+
+    public void titleResp(String newTitle) {
+        this.setTState("title", newTitle);
+    }
+
+    public void mortgageApproval(String approvalid) {
+        this.setTState("mortgage", approvalid);
+    }
+
+    public void close() {
+        if (((String)this.getTState("title")) != null && ((String)this.getTState("mortgage")) != null) {
+            this.stabilize();
+            this.sendMsg("endTransaction", new Object[0], ((Pinger)this.getTState("transDirector")));
+        } else {
+            this.sendMsg("close", new Object[0], this.self());
+        }
+    }
+
+    public void rejectOffer() {
+        this.sendMsg("endTransaction", new Object[0], ((Pinger)this.getTState("transDirector")));
+        this.rollback(false, null); return;
+    }
+
+    public void mortgageDeny() {
+        this.sendMsg("endTransaction", new Object[0], ((Pinger)this.getTState("transDirector")));
+        this.rollback(false, null); return;
+    }
+
+    public void printString(){
+        System.out.println("BUYER:\n" + this.getString() + "\n\n");
+    }   
+
+}

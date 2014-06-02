@@ -1,0 +1,26 @@
+module transactor.examples.house_purchase;
+
+import transactor.language.*;
+import java.util.*;
+
+behavior creditDB extends Transactor {
+
+    public creditDB() {
+        super(self);
+    }
+
+    public void initialize() {
+        this.stabilize();
+        this.checkpoint();
+    }
+
+    public void getCreditApproval(String houseid, buySrv buyer, int price, lendSrv requester) {
+        this.stabilize();
+        Object[] approval = {"approval" + houseid};
+        this.sendMsg("approvalResp", approval, requester);
+    }
+    public void printString(){
+        System.out.println("CREDITOR:\n" + this.getString() + "\n\n");
+    }   
+
+}

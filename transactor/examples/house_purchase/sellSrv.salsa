@@ -1,0 +1,44 @@
+module transactor.examples.house_purchase;
+
+import transactor.language.*;
+import java.util.*;
+
+behavior sellSrv extends Transactor {
+
+    private HashMap minPrices;
+    private int offeredPrice = 0;
+    private HashMap specs;
+
+    public sellSrv(HashMap specsInfo, HashMap mins) {
+        super(self);
+        this.setTState("specs", specsInfo);
+        this.setTState("minPrices", mins);
+    }
+
+    public void initialize() {
+        this.stabilize();
+        this.checkpoint(); return;
+    }
+
+    public void reqSpecs(String houseId, Transactor customer) {
+        Object[] specInfo = {((HashMap)this.getTState("specs")).get(houseId), ((HashMap)this.getTState("minPrices")).get(houseId)};
+        this.sendMsg("specsResp", specInfo, customer);
+    }
+
+    public void offer(String houseId, int price, buySrv buyer) {
+        this.setTState("offeredPrice", price);
+        if (price >= (int)((HashMap)this.getTState("minPrices")).get(houseId)) {
+            this.stabilize();
+            this.sendMsg("close", new Object[0], buyer);
+        }
+        else {
+            this.sendMsg("rejectOffer", new Object[0], buyer);
+            this.rollback(false, null); return;
+        }
+    }
+
+    public void printString(){
+        System.out.println("SELLER:\n" + this.getString() + "\n\n");
+    }
+}
+        

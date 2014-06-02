@@ -1,0 +1,52 @@
+module transactor.examples.house_purchase;
+
+import transactor.language.*;
+import java.util.*;
+
+behavior lendSrv extends Transactor {
+
+    private buySrv buyer;
+    private String house;
+    private int price = 0;
+    private creditDB creditAgency;
+
+    public lendSrv() {
+        super(self);
+    }
+
+    public void initialize() {
+        this.stabilize();
+        this.checkpoint(); return;
+    }
+
+    public void reqMortgage(String houseid, buySrv buyer, int price, apprSrv appraiser, creditDB creditHistory) {
+        this.setTState("house", houseid);
+        this.setTState("price", price);
+        this.setTState("buyer", buyer);
+        this.setTState("creditAgency", creditHistory);
+        Object[] me = {this.self};
+        this.sendMsg("reqPrice", me, appraiser);
+    }
+
+    public void appraisal(int newPrice) {
+        this.setTState("price", newPrice);
+        Object[] info = {((String)this.getTState("house")), ((buySrv)this.getTState("buyer")), ((int)this.getTState("price")), this.self()};
+        this.sendMsg("getCreditApproval", info, ((creditDB)this.getTState("creditAgency")));
+    }
+
+    public void approvalResp(String approvalid) {
+        if (approvalid != null) {
+            this.stabilize();
+            Object[] approval = {approvalid};
+            this.sendMsg("mortgageApproval", approval, ((buySrv)this.getTState("buyer")));
+        } else {
+            this.sendMsg("mortgageDeny", new Object[0], ((buySrv)this.getTState("buyer")));
+            this.rollback(false, null); return;
+        }
+    }
+
+    public void printString(){
+        System.out.println("LENDER:\n" + this.getString() + "\n\n");
+    }   
+
+}

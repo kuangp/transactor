@@ -1,0 +1,16 @@
+module transactor.language;
+
+import java.util.*;
+
+behavior TransDirector extends Transactor {
+
+    public TransDirector(){
+        super(self);
+    }
+
+    public void startTransaction(Object[] transaction){
+        this.stabilize();
+        Pinger director = (Pinger)this.newTActor(new Pinger());
+        this.sendMsg("pingStart", transaction, director);
+    }
+}

@@ -1,0 +1,61 @@
+module transactor.examples.house_purchase;
+
+import transactor.language.*;
+import java.util.*;
+
+behavior apprSrv extends Transactor {
+
+    private String house;
+    private String specs;
+    private int price = 0;
+    private buySrv buyer;
+    private Transactor requester;
+    private verifySrv verifier;
+
+    public apprSrv() {
+        super(self);
+    }
+
+    public void initialize() {
+        this.stabilize();
+        this.checkpoint(); return;
+    }
+
+    public void reqAppraisal(String houseid, buySrv buyer, sellSrv seller, verifySrv verifier) {
+        this.setTState("buyer", buyer);
+        this.setTState("house", houseid);
+        this.setTState("verifier", verifier);
+        Object[] request = {houseid, this.self()};
+        this.sendMsg("reqSpecs", request, seller);
+    }
+
+    public void specsResp(String newSpecs, int newPrice) {
+        this.setTState("specs", newSpecs);
+        this.setTState("price", newPrice);
+        Object[] resp = {newPrice};
+        this.sendMsg("appraisal", resp, ((buySrv)this.getTState("buyer")));
+    }
+
+    public void reqPrice(Transactor customer) {
+        this.setTState("requester", customer);
+        Object[] houseInfo = {((String)this.getTState("house")), ((String)this.getTState("specs")), this.self()};
+        this.sendMsg("verifySpecs", houseInfo, ((verifySrv)this.getTState("verifier")));
+    }
+
+    public void verify(boolean ok, int verifiedPrice) {
+        Object[] housePrice = {verifiedPrice};
+        if (ok) {
+            this.stabilize();
+            this.sendMsg("appraisal", housePrice, ((Transactor)this.getTState("requester")));
+        } else {
+            this.sendMsg("appraisal", housePrice, ((Transactor)this.getTState("requester")));
+            this.rollback(false, null); return;
+        }
+    }
+
+    public void printString(){
+        System.out.println("APPRAISER:\n" + this.getString() + "\n\n");
+    }   
+
+}
+

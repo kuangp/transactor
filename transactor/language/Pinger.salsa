@@ -1,0 +1,37 @@
+module transactor.language;
+
+import java.util.*;
+
+behavior Pinger extends Transactor {
+
+    private Transactor[] participants;
+    private boolean ack;
+
+    public Pinger() {
+        super(self);
+    }
+
+    public void pingStart(Transactor[] participants, Transactor coordinator, String msg, Object[] msg_args) {
+        this.setTState("participants", participants);
+        Object[] transaction = {msg, msg_args, this.self()};
+        this.sendMsg("transactionStart", transaction, coordinator);
+        this.sendMsg("ping", new Object[0], this.self());
+    }
+
+    public void ping() {
+        if (this.setTState("ack", true) == true){
+            this.sendMsg("ping", new Object[0], this.self());
+        } else {
+            int i;
+            Object[] pingreqs = {((Transactor[])this.getTState("participants"))};
+            for(i = 0; i < ((Transactor[])this.getTState("participants")).length; i++){
+                this.sendMsg("pingreq", pingreqs, ((Transactor[])this.getTState("participants"))[i]);
+            }
+        }
+    }
+
+    public void endTransaction() {
+        this.stabilize();
+    }
+}
+
