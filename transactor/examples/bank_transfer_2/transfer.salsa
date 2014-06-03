@@ -1,0 +1,54 @@
+module transactor.examples.bank_transfer_2;
+
+import transactor.language.*;
+import java.util.*;
+
+behavior transfer extends Transactor {
+
+    private bankaccount save;
+    private bankaccount check;
+    private teller banker;
+
+    public transfer(){
+        super(self);
+    }
+
+    public void fund() {
+        Transactor[] participants = {((Transactor)this.getTState("save")), ((Transactor)this.getTState("check")), ((Transactor)this.getTState("banker"))};
+        Object[] transferInfo = {500, ((bankaccount)this.getTState("save")), ((bankaccount)this.getTState("check"))};
+        this.stabilize();
+        this.startTransaction(participants, ((teller)this.getTState("banker")), "transfer", transferInfo);
+    }
+
+    // This example is tested with an actor for simplicity
+    public void act(String[] args) {
+        bankaccount savings = new bankaccount(100);
+        bankaccount checking = new bankaccount(100);
+        teller atm = new teller();
+
+        this.setTState("save", savings);
+        this.setTState("check", checking);
+        this.setTState("banker", atm);
+
+        savings<-initialize() @
+            checking<-initialize() @
+            atm<-initialize() @
+        standardOutput<-println("SAVINGS ACCOUNT: ") @
+            savings<-printData() @
+        standardOutput<-println("CHECKING ACCOUNT: ") @
+            checking<-printData() @
+        standardOutput<-println("TELLER: ") @
+            atm<-printData() @
+        self<-fund() @
+        // wait for transactions to complete
+        standardOutput<-println("===================================="):delay(new Integer(5000)) @
+        standardOutput<-println("SAVINGS ACCOUNT: ") @
+            savings<-printData() @
+            standardOutput<-println() @
+        standardOutput<-println("CHECKING ACCOUNT: ") @
+            checking<-printData() @
+            standardOutput<-println() @
+        standardOutput<-println("TELLER: ") @
+            atm<-printData(); 
+    }
+}

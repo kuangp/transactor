@@ -1,0 +1,40 @@
+module transactor.examples.bank_transfer_2;
+
+import transactor.language.*;
+import java.util.*;
+
+behavior bankaccount extends Transactor {
+
+    private int bal = 0;
+    
+    public bankaccount(int balance) {
+        super(self);
+        this.setTState("bal", balance);
+    }
+
+    public void initialize(){
+        this.stabilize();
+        this.checkpoint(); return;
+    }
+
+    public void adj(int delta, teller atm) {
+        this.setTState("bal", ((int)this.getTState("bal")) + delta);
+        Object[] response = new Object[1];
+        if (((int)this.getTState("bal")) < 0){
+            response[0] = "Not enough funds!";
+            this.sendMsg("done", response, atm);
+            this.rollback(false, null); return;
+        }
+        else {
+            this.stabilize();
+            response[0] = "Balance update successful!";
+            this.sendMsg("done", response, atm);
+        }
+    }
+
+    public void printData() {
+        System.out.println("Balance: " + ((int)this.getTState("bal")));
+        System.out.println(this.getString());
+    }
+}
+        
