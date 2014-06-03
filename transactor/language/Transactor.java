@@ -458,13 +458,19 @@ public class Transactor extends UniversalActor  {
             return value;
 		}
 
-        // NOTE: Sending the trigger message to self ot start the transaciton places its name in the root set
-        // which may be undesirable in certain circumstances...
+        /* 
+         * Coordinator transactor records current transaction director and sends itself the trigger msg
+         * NOTE: Sending the trigger message to self ot start the transaciton places its name in the root set
+         * which may be undesirable in certain circumstances...
+         */
         public void transactionStart(String msg, Object[] msg_args, Pinger director){
             this.setTState("transDirector", director);
             this.sendMsg(msg, msg_args, this.self());
         }
 
+        /*
+         * Handles sending ping msgs to all participants within a transaction to reach global consistency
+         */
         public void pingreq(Transactor[] pingreqs) {
             for (Object t : pingreqs){
                 this.sendMsg("ping", new Object[0], (Transactor)t);
@@ -476,6 +482,9 @@ public class Transactor extends UniversalActor  {
             this.checkpoint(); return;
         }
 
+        /*
+         * Mechanism to start consistent transactions by requesting a pinger from the transaction director
+         */
         public void startTransaction(Transactor[] participants, Transactor coordinator, String msg, Object[] msg_args){
             Object[][] transaction = {{participants, coordinator, msg, msg_args}};
             this.sendMsg("startTransaction", transaction, ServiceFactory.getTransDirector());

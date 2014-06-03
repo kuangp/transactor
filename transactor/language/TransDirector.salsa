@@ -2,6 +2,9 @@ module transactor.language;
 
 import java.util.*;
 
+/*
+ * Transaction Director creates a new pinger to use in conjunction with a new transaction
+ */
 behavior TransDirector extends Transactor {
 
     public TransDirector(){

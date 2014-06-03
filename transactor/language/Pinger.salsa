@@ -2,6 +2,9 @@ module transactor.language;
 
 import java.util.*;
 
+/*
+ * Pinger Transactor handles directing participants within a transaction to reconcile dependency information 
+ */
 behavior Pinger extends Transactor {
 
     private Transactor[] participants;
