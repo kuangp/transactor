@@ -10,6 +10,9 @@ behavior teller extends Transactor {
 
     public teller() {
         super(self);
+    }
+
+    public void initialize() {
         this.stabilize();
         this.checkpoint(); return;
     }

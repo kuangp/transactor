@@ -268,9 +268,11 @@ public class bankaccount extends Transactor {
 		public void construct(int balance){
 			super.construct( (((bankaccount)self)) );
 			this.setTState("bal", balance);
+		}
+		public void initialize() {
 			this.stabilize();
 			this.checkpoint();
-						return;
+			return;
 		}
 		public void adj(int delta, teller atm) {
 			this.setTState("bal", ((int)this.getTState("bal"))+delta);

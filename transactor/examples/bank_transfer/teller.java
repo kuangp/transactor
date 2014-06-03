@@ -260,9 +260,11 @@ public class teller extends Transactor {
 		Object acked;
 		public void construct(){
 			super.construct( (((teller)self)) );
+		}
+		public void initialize() {
 			this.stabilize();
 			this.checkpoint();
-						return;
+			return;
 		}
 		public void transfer(int delta, bankaccount inacct, bankaccount outacct, pinger acct_pinger) {
 			Object[] accts = { inacct, outacct };

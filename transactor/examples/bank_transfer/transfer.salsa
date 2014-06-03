@@ -13,6 +13,9 @@ behavior transfer extends Transactor {
         pinger acct_pinger = new pinger();
         
         acct_pinger<-init(atm) @
+            savings<-initialize() @
+            checking<-initialize() @
+            atm<-initialize() @
         standardOutput<-println("SAVINGS ACCOUNT: ") @
             savings<-printData() @
         standardOutput<-println("CHECKING ACCOUNT: ") @

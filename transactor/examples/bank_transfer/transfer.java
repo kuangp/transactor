@@ -290,70 +290,91 @@ public class transfer extends Transactor {
 				Token token_2_15 = new Token();
 				Token token_2_16 = new Token();
 				Token token_2_17 = new Token();
+				Token token_2_18 = new Token();
+				Token token_2_19 = new Token();
+				Token token_2_20 = new Token();
 				// acct_pinger<-init(atm)
 				{
 					Object _arguments[] = { atm };
 					Message message = new Message( self, acct_pinger, "init", _arguments, null, token_2_0 );
 					__messages.add( message );
 				}
+				// savings<-initialize()
+				{
+					Object _arguments[] = {  };
+					Message message = new Message( self, savings, "initialize", _arguments, token_2_0, token_2_1 );
+					__messages.add( message );
+				}
+				// checking<-initialize()
+				{
+					Object _arguments[] = {  };
+					Message message = new Message( self, checking, "initialize", _arguments, token_2_1, token_2_2 );
+					__messages.add( message );
+				}
+				// atm<-initialize()
+				{
+					Object _arguments[] = {  };
+					Message message = new Message( self, atm, "initialize", _arguments, token_2_2, token_2_3 );
+					__messages.add( message );
+				}
 				// standardOutput<-println("SAVINGS ACCOUNT: ")
 				{
 					Object _arguments[] = { "SAVINGS ACCOUNT: " };
-					Message message = new Message( self, standardOutput, "println", _arguments, token_2_0, token_2_1 );
+					Message message = new Message( self, standardOutput, "println", _arguments, token_2_3, token_2_4 );
 					__messages.add( message );
 				}
 				// savings<-printData()
 				{
 					Object _arguments[] = {  };
-					Message message = new Message( self, savings, "printData", _arguments, token_2_1, token_2_2 );
+					Message message = new Message( self, savings, "printData", _arguments, token_2_4, token_2_5 );
 					__messages.add( message );
 				}
 				// standardOutput<-println("CHECKING ACCOUNT: ")
 				{
 					Object _arguments[] = { "CHECKING ACCOUNT: " };
-					Message message = new Message( self, standardOutput, "println", _arguments, token_2_2, token_2_3 );
+					Message message = new Message( self, standardOutput, "println", _arguments, token_2_5, token_2_6 );
 					__messages.add( message );
 				}
 				// checking<-printData()
 				{
 					Object _arguments[] = {  };
-					Message message = new Message( self, checking, "printData", _arguments, token_2_3, token_2_4 );
+					Message message = new Message( self, checking, "printData", _arguments, token_2_6, token_2_7 );
 					__messages.add( message );
 				}
 				// standardOutput<-println("TELLER: ")
 				{
 					Object _arguments[] = { "TELLER: " };
-					Message message = new Message( self, standardOutput, "println", _arguments, token_2_4, token_2_5 );
+					Message message = new Message( self, standardOutput, "println", _arguments, token_2_7, token_2_8 );
 					__messages.add( message );
 				}
 				// atm<-printData()
 				{
 					Object _arguments[] = {  };
-					Message message = new Message( self, atm, "printData", _arguments, token_2_5, token_2_6 );
+					Message message = new Message( self, atm, "printData", _arguments, token_2_8, token_2_9 );
 					__messages.add( message );
 				}
 				// standardOutput<-println("PINGER: ")
 				{
 					Object _arguments[] = { "PINGER: " };
-					Message message = new Message( self, standardOutput, "println", _arguments, token_2_6, token_2_7 );
+					Message message = new Message( self, standardOutput, "println", _arguments, token_2_9, token_2_10 );
 					__messages.add( message );
 				}
 				// acct_pinger<-printData()
 				{
 					Object _arguments[] = {  };
-					Message message = new Message( self, acct_pinger, "printData", _arguments, token_2_7, token_2_8 );
+					Message message = new Message( self, acct_pinger, "printData", _arguments, token_2_10, token_2_11 );
 					__messages.add( message );
 				}
-				// atm<-transfer(500, savings, checking, acct_pinger)
+				// atm<-transfer(50, savings, checking, acct_pinger)
 				{
-					Object _arguments[] = { new Integer(500), savings, checking, acct_pinger };
-					Message message = new Message( self, atm, "transfer", _arguments, token_2_8, token_2_9 );
+					Object _arguments[] = { new Integer(50), savings, checking, acct_pinger };
+					Message message = new Message( self, atm, "transfer", _arguments, token_2_11, token_2_12 );
 					__messages.add( message );
 				}
 				// standardOutput<-println("====================================")
 				{
 					Object _arguments[] = { "====================================" };
-					Message message = new Message( self, standardOutput, "println", _arguments, token_2_9, token_2_10 );
+					Message message = new Message( self, standardOutput, "println", _arguments, token_2_12, token_2_13 );
 					Object[] _propertyInfo = { new Integer(5000) };
 					message.setProperty( "delay", _propertyInfo );
 					__messages.add( message );
@@ -361,31 +382,13 @@ public class transfer extends Transactor {
 				// standardOutput<-println("SAVINGS ACCOUNT: ")
 				{
 					Object _arguments[] = { "SAVINGS ACCOUNT: " };
-					Message message = new Message( self, standardOutput, "println", _arguments, token_2_10, token_2_11 );
+					Message message = new Message( self, standardOutput, "println", _arguments, token_2_13, token_2_14 );
 					__messages.add( message );
 				}
 				// savings<-printData()
 				{
 					Object _arguments[] = {  };
-					Message message = new Message( self, savings, "printData", _arguments, token_2_11, token_2_12 );
-					__messages.add( message );
-				}
-				// standardOutput<-println()
-				{
-					Object _arguments[] = {  };
-					Message message = new Message( self, standardOutput, "println", _arguments, token_2_12, token_2_13 );
-					__messages.add( message );
-				}
-				// standardOutput<-println("CHECKING ACCOUNT: ")
-				{
-					Object _arguments[] = { "CHECKING ACCOUNT: " };
-					Message message = new Message( self, standardOutput, "println", _arguments, token_2_13, token_2_14 );
-					__messages.add( message );
-				}
-				// checking<-printData()
-				{
-					Object _arguments[] = {  };
-					Message message = new Message( self, checking, "printData", _arguments, token_2_14, token_2_15 );
+					Message message = new Message( self, savings, "printData", _arguments, token_2_14, token_2_15 );
 					__messages.add( message );
 				}
 				// standardOutput<-println()
@@ -394,16 +397,34 @@ public class transfer extends Transactor {
 					Message message = new Message( self, standardOutput, "println", _arguments, token_2_15, token_2_16 );
 					__messages.add( message );
 				}
+				// standardOutput<-println("CHECKING ACCOUNT: ")
+				{
+					Object _arguments[] = { "CHECKING ACCOUNT: " };
+					Message message = new Message( self, standardOutput, "println", _arguments, token_2_16, token_2_17 );
+					__messages.add( message );
+				}
+				// checking<-printData()
+				{
+					Object _arguments[] = {  };
+					Message message = new Message( self, checking, "printData", _arguments, token_2_17, token_2_18 );
+					__messages.add( message );
+				}
+				// standardOutput<-println()
+				{
+					Object _arguments[] = {  };
+					Message message = new Message( self, standardOutput, "println", _arguments, token_2_18, token_2_19 );
+					__messages.add( message );
+				}
 				// standardOutput<-println("TELLER: ")
 				{
 					Object _arguments[] = { "TELLER: " };
-					Message message = new Message( self, standardOutput, "println", _arguments, token_2_16, token_2_17 );
+					Message message = new Message( self, standardOutput, "println", _arguments, token_2_19, token_2_20 );
 					__messages.add( message );
 				}
 				// atm<-printData()
 				{
 					Object _arguments[] = {  };
-					Message message = new Message( self, atm, "printData", _arguments, token_2_17, null );
+					Message message = new Message( self, atm, "printData", _arguments, token_2_20, null );
 					__messages.add( message );
 				}
 			}
