@@ -18,6 +18,7 @@ behavior housePurchase extends Transactor {
     }
 
     void initialize() {
+        this.stabilize();
         /*** BEGIN SALSA CODE ***/
         HashMap titles = new HashMap();
         titles.put("1234", "title1234");
@@ -38,13 +39,11 @@ behavior housePurchase extends Transactor {
         lender = new lendSrv();
         buyer = new buySrv(searcher, appraiser, seller, lender, verifier, creditAgency);
 
-        searcher<-initialize() @
             seller<-initialize() @
-            verifier<-initialize() @
             appraiser<-initialize() @
-            creditAgency<-initialize() @
             lender<-initialize() @
             buyer<-initialize() @
+            searcher<-printString() @
             seller<-printString() @
             verifier<-printString() @
             appraiser<-printString() @
@@ -53,6 +52,7 @@ behavior housePurchase extends Transactor {
             buyer<-printString() @
             self<-purchase() @
             standardOutput<-println("==================================="):delay(new Integer(5000)) @
+            searcher<-printString() @
             seller<-printString() @
             verifier<-printString() @
             appraiser<-printString() @
@@ -66,7 +66,7 @@ behavior housePurchase extends Transactor {
     void purchase() {
         this.stabilize();
 
-        Transactor[] participants = {((Transactor)this.getTState("searcher")), ((Transactor)this.getTState("seller")), ((Transactor)this.getTState("verifier")), ((Transactor)this.getTState("appraiser")), ((Transactor)this.getTState("lender")), ((Transactor)this.getTState("creditAgency")), ((Transactor)this.getTState("buyer"))};
+        Transactor[] participants = {((Transactor)this.getTState("seller")), ((Transactor)this.getTState("appraiser")), ((Transactor)this.getTState("lender")), ((Transactor)this.getTState("buyer"))};
 
         Object[] purchase = {"1234"};
         this.startTransaction(participants, ((buySrv)this.getTState("buyer")), "newHousePurchase", purchase);

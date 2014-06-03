@@ -34,7 +34,7 @@ import salsa.resources.ActorService;
 import transactor.language.*;
 import java.util.*;
 
-public class searchSrv extends Transactor {
+public class searchSrv extends Proxy {
 	public static void main(String args[]) {
 		UAN uan = null;
 		UAL ual = null;
@@ -186,7 +186,7 @@ public class searchSrv extends Transactor {
 		return this;
 	}
 
-	public class State extends Transactor.State {
+	public class State extends Proxy.State {
 		public searchSrv self;
 		public void updateSelf(ActorReference actorReference) {
 			((searchSrv)actorReference).setUAL(getUAL());
@@ -270,12 +270,10 @@ public class searchSrv extends Transactor {
 			this.setTState("titlesDB", titlesInfo);
 		}
 		public void initialize() {
-			this.stabilize();
 			this.checkpoint();
 			return;
 		}
 		public void reqSearch(String houseId, Transactor customer) {
-			this.stabilize();
 			Object[] title = { ((HashMap)this.getTState("titlesDB")).get(houseId) };
 			this.sendMsg("titleResp", title, customer);
 		}

@@ -98,7 +98,7 @@ public class Transactor extends UniversalActor  {
         
         /* 
          * Super constructor must be called from subclasses of transactors
-         * Transactor complier would need to insert super(self) into the construct method AND create a noargs construct is none is found 
+         * Transactor complier would need to insert super(self) into the construct method AND create a noargs construct is none is found***
          * self is needed since subclasses overrides its parents memeber variables and hides it from the parent
          * so we need access to self in these methods
          */
@@ -222,6 +222,7 @@ public class Transactor extends UniversalActor  {
          * [Transactor Class] [name] = (Transactor Class) this.newTActor(new [Transactor Class]([args]))
          * NOTE: stabilize and checkpoint and msg sends are not supported within the constructor of a tranasactor and will produce unknown outcomes 
          *       Stabilization and checkpoint should be place in a initialize message handler following transactor construction*
+         * NOTE: This method returns null if a dependent proxy creation is attempted
          */
         /*** [new] ***/
 		public Transactor newTActor(Transactor new_T) {
@@ -230,18 +231,31 @@ public class Transactor extends UniversalActor  {
                 new_name = new_T.getUAN().toString();
 			else 
                 new_name = new_T.getUAL().toString();
+
+			Worldview new_wv = new Worldview(wv.getHistMap(), wv.getDepGraph(), new HashSet());
             // adds new t to histMap for both
-			wv.getHistMap().put(new_name, new History());
+            new_wv.getHistMap().put(new_name, new History());
             // sets depGraph to t dependent on parents root set plus parent
-			wv.getDepGraph().put(new_name, new HashSet());
-			wv.getDepGraph().get(new_name).add(name);
-			Iterator i = wv.getRootSet().iterator();
-			while (i.hasNext()) {
-				wv.getDepGraph().get(new_name).add((String)i.next());
-			}
+            new_wv.getDepGraph().put(new_name, new HashSet());
+            new_wv.getDepGraph().get(new_name).add(name);
+            Iterator i = wv.getRootSet().iterator();
+            while (i.hasNext()) {
+                new_wv.getDepGraph().get(new_name).add((String)i.next());
+            }
+
+            // Proxy Transactor must be created independent
+            if (new_T instanceof Proxy) {
+                if (!new_wv.independent(new_name))
+                        return null;
+            }
+            
+            // Parent and child have the same history map and dep graph
+            wv.setHistMap(new_wv.getHistMap());
+            wv.setDepGraph(new_wv.getDepGraph());
             // adds t to root set of parent
 			wv.getRootSet().add(new_name);
-			Worldview new_wv = new Worldview(wv.getHistMap(), wv.getDepGraph(), new HashSet());
+            
+
             // new_T<-setWV(new_wv)
             Object args[] = { new_wv };
             Message msg = new Message( self, new_T, "setWV", args, null, null );

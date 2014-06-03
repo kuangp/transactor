@@ -275,6 +275,7 @@ public class housePurchase extends Transactor {
 			super.construct( (((housePurchase)self)) );
 		}
 		public void initialize() {
+			this.stabilize();
 			HashMap titles = new HashMap();
 			titles.put("1234", "title1234");
 			titles.put("5678", "title5678");
@@ -311,140 +312,133 @@ public class housePurchase extends Transactor {
 				Token token_2_16 = new Token();
 				Token token_2_17 = new Token();
 				Token token_2_18 = new Token();
-				Token token_2_19 = new Token();
-				// searcher<-initialize()
-				{
-					Object _arguments[] = {  };
-					Message message = new Message( self, searcher, "initialize", _arguments, null, token_2_0 );
-					__messages.add( message );
-				}
 				// seller<-initialize()
 				{
 					Object _arguments[] = {  };
-					Message message = new Message( self, seller, "initialize", _arguments, token_2_0, token_2_1 );
-					__messages.add( message );
-				}
-				// verifier<-initialize()
-				{
-					Object _arguments[] = {  };
-					Message message = new Message( self, verifier, "initialize", _arguments, token_2_1, token_2_2 );
+					Message message = new Message( self, seller, "initialize", _arguments, null, token_2_0 );
 					__messages.add( message );
 				}
 				// appraiser<-initialize()
 				{
 					Object _arguments[] = {  };
-					Message message = new Message( self, appraiser, "initialize", _arguments, token_2_2, token_2_3 );
-					__messages.add( message );
-				}
-				// creditAgency<-initialize()
-				{
-					Object _arguments[] = {  };
-					Message message = new Message( self, creditAgency, "initialize", _arguments, token_2_3, token_2_4 );
+					Message message = new Message( self, appraiser, "initialize", _arguments, token_2_0, token_2_1 );
 					__messages.add( message );
 				}
 				// lender<-initialize()
 				{
 					Object _arguments[] = {  };
-					Message message = new Message( self, lender, "initialize", _arguments, token_2_4, token_2_5 );
+					Message message = new Message( self, lender, "initialize", _arguments, token_2_1, token_2_2 );
 					__messages.add( message );
 				}
 				// buyer<-initialize()
 				{
 					Object _arguments[] = {  };
-					Message message = new Message( self, buyer, "initialize", _arguments, token_2_5, token_2_6 );
+					Message message = new Message( self, buyer, "initialize", _arguments, token_2_2, token_2_3 );
+					__messages.add( message );
+				}
+				// searcher<-printString()
+				{
+					Object _arguments[] = {  };
+					Message message = new Message( self, searcher, "printString", _arguments, token_2_3, token_2_4 );
 					__messages.add( message );
 				}
 				// seller<-printString()
 				{
 					Object _arguments[] = {  };
-					Message message = new Message( self, seller, "printString", _arguments, token_2_6, token_2_7 );
+					Message message = new Message( self, seller, "printString", _arguments, token_2_4, token_2_5 );
 					__messages.add( message );
 				}
 				// verifier<-printString()
 				{
 					Object _arguments[] = {  };
-					Message message = new Message( self, verifier, "printString", _arguments, token_2_7, token_2_8 );
+					Message message = new Message( self, verifier, "printString", _arguments, token_2_5, token_2_6 );
 					__messages.add( message );
 				}
 				// appraiser<-printString()
 				{
 					Object _arguments[] = {  };
-					Message message = new Message( self, appraiser, "printString", _arguments, token_2_8, token_2_9 );
+					Message message = new Message( self, appraiser, "printString", _arguments, token_2_6, token_2_7 );
 					__messages.add( message );
 				}
 				// creditAgency<-printString()
 				{
 					Object _arguments[] = {  };
-					Message message = new Message( self, creditAgency, "printString", _arguments, token_2_9, token_2_10 );
+					Message message = new Message( self, creditAgency, "printString", _arguments, token_2_7, token_2_8 );
 					__messages.add( message );
 				}
 				// lender<-printString()
 				{
 					Object _arguments[] = {  };
-					Message message = new Message( self, lender, "printString", _arguments, token_2_10, token_2_11 );
+					Message message = new Message( self, lender, "printString", _arguments, token_2_8, token_2_9 );
 					__messages.add( message );
 				}
 				// buyer<-printString()
 				{
 					Object _arguments[] = {  };
-					Message message = new Message( self, buyer, "printString", _arguments, token_2_11, token_2_12 );
+					Message message = new Message( self, buyer, "printString", _arguments, token_2_9, token_2_10 );
 					__messages.add( message );
 				}
 				// ((housePurchase)self)<-purchase()
 				{
 					Object _arguments[] = {  };
-					Message message = new Message( self, ((housePurchase)self), "purchase", _arguments, token_2_12, token_2_13 );
+					Message message = new Message( self, ((housePurchase)self), "purchase", _arguments, token_2_10, token_2_11 );
 					__messages.add( message );
 				}
 				// standardOutput<-println("===================================")
 				{
 					Object _arguments[] = { "===================================" };
-					Message message = new Message( self, standardOutput, "println", _arguments, token_2_13, token_2_14 );
+					Message message = new Message( self, standardOutput, "println", _arguments, token_2_11, token_2_12 );
 					Object[] _propertyInfo = { new Integer(5000) };
 					message.setProperty( "delay", _propertyInfo );
+					__messages.add( message );
+				}
+				// searcher<-printString()
+				{
+					Object _arguments[] = {  };
+					Message message = new Message( self, searcher, "printString", _arguments, token_2_12, token_2_13 );
 					__messages.add( message );
 				}
 				// seller<-printString()
 				{
 					Object _arguments[] = {  };
-					Message message = new Message( self, seller, "printString", _arguments, token_2_14, token_2_15 );
+					Message message = new Message( self, seller, "printString", _arguments, token_2_13, token_2_14 );
 					__messages.add( message );
 				}
 				// verifier<-printString()
 				{
 					Object _arguments[] = {  };
-					Message message = new Message( self, verifier, "printString", _arguments, token_2_15, token_2_16 );
+					Message message = new Message( self, verifier, "printString", _arguments, token_2_14, token_2_15 );
 					__messages.add( message );
 				}
 				// appraiser<-printString()
 				{
 					Object _arguments[] = {  };
-					Message message = new Message( self, appraiser, "printString", _arguments, token_2_16, token_2_17 );
+					Message message = new Message( self, appraiser, "printString", _arguments, token_2_15, token_2_16 );
 					__messages.add( message );
 				}
 				// creditAgency<-printString()
 				{
 					Object _arguments[] = {  };
-					Message message = new Message( self, creditAgency, "printString", _arguments, token_2_17, token_2_18 );
+					Message message = new Message( self, creditAgency, "printString", _arguments, token_2_16, token_2_17 );
 					__messages.add( message );
 				}
 				// lender<-printString()
 				{
 					Object _arguments[] = {  };
-					Message message = new Message( self, lender, "printString", _arguments, token_2_18, token_2_19 );
+					Message message = new Message( self, lender, "printString", _arguments, token_2_17, token_2_18 );
 					__messages.add( message );
 				}
 				// buyer<-printString()
 				{
 					Object _arguments[] = {  };
-					Message message = new Message( self, buyer, "printString", _arguments, token_2_19, null );
+					Message message = new Message( self, buyer, "printString", _arguments, token_2_18, null );
 					__messages.add( message );
 				}
 			}
 		}
 		public void purchase() {
 			this.stabilize();
-			Transactor[] participants = { ((Transactor)this.getTState("searcher")), ((Transactor)this.getTState("seller")), ((Transactor)this.getTState("verifier")), ((Transactor)this.getTState("appraiser")), ((Transactor)this.getTState("lender")), ((Transactor)this.getTState("creditAgency")), ((Transactor)this.getTState("buyer")) };
+			Transactor[] participants = { ((Transactor)this.getTState("seller")), ((Transactor)this.getTState("appraiser")), ((Transactor)this.getTState("lender")), ((Transactor)this.getTState("buyer")) };
 			Object[] purchase = { "1234" };
 			this.startTransaction(participants, ((buySrv)this.getTState("buyer")), "newHousePurchase", purchase);
 		}

@@ -4,7 +4,7 @@ import transactor.language.*;
 import java.util.*;
 
 // Proxy
-behavior verifySrv extends Transactor {
+behavior verifySrv extends Proxy {
 
     private HashMap specs;
     private HashMap prices;
@@ -16,12 +16,10 @@ behavior verifySrv extends Transactor {
     }
 
     public void initialize() {
-        this.stabilize();
         this.checkpoint(); return;
     }
 
     public void verifySpecs(String houseid, String specs, Transactor customer) {
-        this.stabilize();
         if (specs.equals(((HashMap)this.getTState("specs")).get(houseid))) {
             Object[] resp = {true, ((HashMap)this.getTState("prices")).get(houseid)};
             this.sendMsg("verify", resp, customer);

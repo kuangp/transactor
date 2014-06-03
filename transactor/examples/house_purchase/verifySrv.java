@@ -34,7 +34,7 @@ import salsa.resources.ActorService;
 import transactor.language.*;
 import java.util.*;
 
-public class verifySrv extends Transactor {
+public class verifySrv extends Proxy {
 	public static void main(String args[]) {
 		UAN uan = null;
 		UAL ual = null;
@@ -186,7 +186,7 @@ public class verifySrv extends Transactor {
 		return this;
 	}
 
-	public class State extends Transactor.State {
+	public class State extends Proxy.State {
 		public verifySrv self;
 		public void updateSelf(ActorReference actorReference) {
 			((verifySrv)actorReference).setUAL(getUAL());
@@ -272,12 +272,10 @@ public class verifySrv extends Transactor {
 			this.setTState("prices", prices);
 		}
 		public void initialize() {
-			this.stabilize();
 			this.checkpoint();
 			return;
 		}
 		public void verifySpecs(String houseid, String specs, Transactor customer) {
-			this.stabilize();
 			if (specs.equals(((HashMap)this.getTState("specs")).get(houseid))) {{
 				Object[] resp = { true, ((HashMap)this.getTState("prices")).get(houseid) };
 				this.sendMsg("verify", resp, customer);

@@ -34,7 +34,7 @@ import salsa.resources.ActorService;
 import transactor.language.*;
 import java.util.*;
 
-public class creditDB extends Transactor {
+public class creditDB extends Proxy {
 	public static void main(String args[]) {
 		UAN uan = null;
 		UAL ual = null;
@@ -180,7 +180,7 @@ public class creditDB extends Transactor {
 		return this;
 	}
 
-	public class State extends Transactor.State {
+	public class State extends Proxy.State {
 		public creditDB self;
 		public void updateSelf(ActorReference actorReference) {
 			((creditDB)actorReference).setUAL(getUAL());
@@ -260,11 +260,9 @@ public class creditDB extends Transactor {
 			super.construct( (((creditDB)self)) );
 		}
 		public void initialize() {
-			this.stabilize();
 			this.checkpoint();
 		}
 		public void getCreditApproval(String houseid, buySrv buyer, int price, lendSrv requester) {
-			this.stabilize();
 			Object[] approval = { "approval"+houseid };
 			this.sendMsg("approvalResp", approval, requester);
 		}
