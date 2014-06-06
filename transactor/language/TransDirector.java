@@ -260,7 +260,7 @@ public class TransDirector extends Transactor {
 		}
 		public void startTransaction(Object[] transaction) {
 			this.stabilize();
-			Pinger director = (Pinger)this.newTActor(((Pinger)new Pinger(this).construct()));
+			PingDirector director = (PingDirector)this.newTActor(((PingDirector)new PingDirector(this).construct()));
 			this.sendMsg("pingStart", transaction, director);
 		}
 	}

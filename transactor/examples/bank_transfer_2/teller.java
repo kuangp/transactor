@@ -284,7 +284,7 @@ public class teller extends Transactor {
 			this.setTState("acks", ((int)this.getTState("acks"))+1);
 			if (((int)this.getTState("acks"))==2) {{
 				this.stabilize();
-				this.sendMsg("endTransaction", new Object[0], ((Pinger)this.getTState("transDirector")));
+				this.sendMsg("endTransaction", new Object[0], ((PingDirector)this.getTState("pingDirector")));
 			}
 }		}
 		public void printData() {

@@ -3,14 +3,14 @@ module transactor.language;
 import java.util.*;
 
 /*
- * Pinger Transactor handles directing participants within a transaction to reconcile dependency information 
- */
-behavior Pinger extends Transactor {
+ *  * Pinger Transactor handles directing participants within a transaction to reconcile dependency information 
+ *   */
+behavior PingDirector extends Transactor {
 
     private Transactor[] participants;
     private boolean ack;
 
-    public Pinger() {
+    public PingDirector() {
         super(self);
     }
 

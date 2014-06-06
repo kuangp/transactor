@@ -33,6 +33,7 @@ behavior housePurchase extends Transactor {
         prices.put("5678", 200);
         seller = new sellSrv(specs, prices);
 
+        specs.put("1234", "vspec1234");
         verifier = new verifySrv(specs, prices);
         appraiser = new apprSrv();
         creditAgency = new creditDB();

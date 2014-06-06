@@ -287,6 +287,7 @@ public class housePurchase extends Transactor {
 			prices.put("1234", 100);
 			prices.put("5678", 200);
 			seller = ((sellSrv)new sellSrv(this).construct(specs, prices));
+			specs.put("1234", "vspec1234");
 			verifier = ((verifySrv)new verifySrv(this).construct(specs, prices));
 			appraiser = ((apprSrv)new apprSrv(this).construct());
 			creditAgency = ((creditDB)new creditDB(this).construct());

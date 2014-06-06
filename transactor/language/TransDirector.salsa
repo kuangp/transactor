@@ -13,7 +13,7 @@ behavior TransDirector extends Transactor {
 
     public void startTransaction(Object[] transaction){
         this.stabilize();
-        Pinger director = (Pinger)this.newTActor(new Pinger());
+        PingDirector director = (PingDirector)this.newTActor(new PingDirector());
         this.sendMsg("pingStart", transaction, director);
     }
 }

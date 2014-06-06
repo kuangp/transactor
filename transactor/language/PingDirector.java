@@ -33,7 +33,7 @@ import salsa.resources.ActorService;
 
 import java.util.*;
 
-public class Pinger extends Transactor {
+public class PingDirector extends Transactor {
 	public static void main(String args[]) {
 		UAN uan = null;
 		UAL ual = null;
@@ -68,7 +68,7 @@ public class Pinger extends Transactor {
 			ual = new UAL( ServiceFactory.getTheater().getLocation() + System.getProperty("identifier"));
 		}
 		RunTime.receivedMessage();
-		Pinger instance = (Pinger)new Pinger(uan, ual,null).construct();
+		PingDirector instance = (PingDirector)new PingDirector(uan, ual,null).construct();
 		gc.WeakReference instanceRef=new gc.WeakReference(uan,ual);
 		{
 			Object[] _arguments = { args };
@@ -81,18 +81,18 @@ public class Pinger extends Transactor {
 		RunTime.finishedProcessingMessage();
 	}
 
-	public static ActorReference getReferenceByName(UAN uan)	{ return new Pinger(false, uan); }
-	public static ActorReference getReferenceByName(String uan)	{ return Pinger.getReferenceByName(new UAN(uan)); }
-	public static ActorReference getReferenceByLocation(UAL ual)	{ return new Pinger(false, ual); }
+	public static ActorReference getReferenceByName(UAN uan)	{ return new PingDirector(false, uan); }
+	public static ActorReference getReferenceByName(String uan)	{ return PingDirector.getReferenceByName(new UAN(uan)); }
+	public static ActorReference getReferenceByLocation(UAL ual)	{ return new PingDirector(false, ual); }
 
-	public static ActorReference getReferenceByLocation(String ual)	{ return Pinger.getReferenceByLocation(new UAL(ual)); }
-	public Pinger(boolean o, UAN __uan)	{ super(false,__uan); }
-	public Pinger(boolean o, UAL __ual)	{ super(false,__ual); }
-	public Pinger(UAN __uan,UniversalActor.State sourceActor)	{ this(__uan, null, sourceActor); }
-	public Pinger(UAL __ual,UniversalActor.State sourceActor)	{ this(null, __ual, sourceActor); }
-	public Pinger(UniversalActor.State sourceActor)		{ this(null, null, sourceActor);  }
-	public Pinger()		{  }
-	public Pinger(UAN __uan, UAL __ual, Object obj) {
+	public static ActorReference getReferenceByLocation(String ual)	{ return PingDirector.getReferenceByLocation(new UAL(ual)); }
+	public PingDirector(boolean o, UAN __uan)	{ super(false,__uan); }
+	public PingDirector(boolean o, UAL __ual)	{ super(false,__ual); }
+	public PingDirector(UAN __uan,UniversalActor.State sourceActor)	{ this(__uan, null, sourceActor); }
+	public PingDirector(UAL __ual,UniversalActor.State sourceActor)	{ this(null, __ual, sourceActor); }
+	public PingDirector(UniversalActor.State sourceActor)		{ this(null, null, sourceActor);  }
+	public PingDirector()		{  }
+	public PingDirector(UAN __uan, UAL __ual, Object obj) {
 		//decide the type of sourceActor
 		//if obj is null, the actor must be the startup actor.
 		//if obj is an actorReference, this actor is created by a remote actor
@@ -115,7 +115,7 @@ public class Pinger extends Transactor {
 			      setSource(sourceActor.getUAN(), sourceActor.getUAL());
 			      activateGC();
 			    }
-			    createRemotely(__uan, __ual, "transactor.language.Pinger", sourceRef);
+			    createRemotely(__uan, __ual, "transactor.language.PingDirector", sourceRef);
 			  }
 
 			  // local creation
@@ -180,11 +180,11 @@ public class Pinger extends Transactor {
 	}
 
 	public class State extends Transactor.State {
-		public Pinger self;
+		public PingDirector self;
 		public void updateSelf(ActorReference actorReference) {
-			((Pinger)actorReference).setUAL(getUAL());
-			((Pinger)actorReference).setUAN(getUAN());
-			self = new Pinger(false,getUAL());
+			((PingDirector)actorReference).setUAL(getUAL());
+			((PingDirector)actorReference).setUAN(getUAN());
+			self = new PingDirector(false,getUAL());
 			self.setUAN(getUAN());
 			self.setUAL(getUAL());
 			self.activateGC();
@@ -196,7 +196,7 @@ public class Pinger extends Transactor {
 
 		public State(UAN __uan, UAL __ual) {
 			super(__uan, __ual);
-			addClassName( "transactor.language.Pinger$State" );
+			addClassName( "transactor.language.PingDirector$State" );
 			addMethodsForClasses();
 		}
 
@@ -258,7 +258,7 @@ public class Pinger extends Transactor {
 		Transactor[] participants;
 		boolean ack;
 		public void construct(){
-			super.construct( (((Pinger)self)) );
+			super.construct( (((PingDirector)self)) );
 		}
 		public void pingStart(Transactor[] participants, Transactor coordinator, String msg, Object[] msg_args) {
 			this.setTState("participants", participants);

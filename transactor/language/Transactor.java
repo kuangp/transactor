@@ -94,7 +94,7 @@ public class Transactor extends UniversalActor  {
         private URI USL;
 
         // Transaction director aka the pinger used to reconcile dependency information within a set of participants of a transaction
-        public Pinger transDirector;
+        public PingDirector pingDirector;
         
         /* 
          * Super constructor must be called from subclasses of transactors
@@ -477,8 +477,8 @@ public class Transactor extends UniversalActor  {
          * NOTE: Sending the trigger message to self ot start the transaciton places its name in the root set
          * which may be undesirable in certain circumstances...
          */
-        public void transactionStart(String msg, Object[] msg_args, Pinger director){
-            this.setTState("transDirector", director);
+        public void transactionStart(String msg, Object[] msg_args, PingDirector director){
+            this.setTState("pingDirector", director);
             this.sendMsg(msg, msg_args, this.self());
         }
 
