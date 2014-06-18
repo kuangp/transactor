@@ -109,10 +109,10 @@ public class Transactor extends UniversalActor  {
             // How is self updated when migrating in SALSA?
 			this.self = self;
 			if (self.getUAN() != null) 
-                this.name = self.getUAN().toString();
+                this.name = self.getUAN().toString().substring(self.getUAN().toString().lastIndexOf("/") + 1);
 			else 
-            this.name = self.getUAL().toString();
-            try { this.USL = new URI("file:///Users/carrykuang/Documents/transactor/"+name.substring(name.lastIndexOf("/") + 1)+".ser"); }
+                this.name = self.getUAL().toString().substring(self.getUAL().toString().lastIndexOf("/") + 1);
+            try { this.USL = new URI("file:///Users/carrykuang/Documents/transactor/"+name+".ser"); }
             // TODO: Handle malformed uri
             catch (Exception e) { e.printStackTrace(); }
 			wv = new Worldview();
@@ -228,9 +228,9 @@ public class Transactor extends UniversalActor  {
 		public Transactor newTActor(Transactor new_T) {
 			String new_name;
 			if (new_T.getUAN()!=null) 
-                new_name = new_T.getUAN().toString();
+                new_name = new_T.getUAN().toString().substring(new_T.getUAN().toString().lastIndexOf("/") + 1);
 			else 
-                new_name = new_T.getUAL().toString();
+                new_name = new_T.getUAL().toString().substring(new_T.getUAL().toString().lastIndexOf("/") + 1);
 
 			Worldview new_wv = new Worldview(wv.getHistMap(), wv.getDepGraph(), new HashSet());
             // adds new t to histMap for both

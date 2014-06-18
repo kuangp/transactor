@@ -7,10 +7,10 @@ behavior transfer extends Transactor {
 
     // This example is tested with an actor for simplicity
     void act(String[] args) {
-        bankaccount savings = new bankaccount(100);
-        bankaccount checking = new bankaccount(100);
-        teller atm = new teller();
-        pinger acct_pinger = new pinger();
+        bankaccount savings = new bankaccount(100) at (new UAN("uan://localhost/savings"));
+        bankaccount checking = new bankaccount(100) at (new UAN("uan://localhost/checking"));
+        teller atm = new teller() at (new UAN("uan://localhost/teller"));
+        pinger acct_pinger = new pinger() at (new UAN("uan://localhost/pinger"));
         
         acct_pinger<-init(atm) @
             savings<-initialize() @
@@ -18,13 +18,16 @@ behavior transfer extends Transactor {
             atm<-initialize() @
         standardOutput<-println("SAVINGS ACCOUNT: ") @
             savings<-printData() @
+            standardOutput<-println() @
         standardOutput<-println("CHECKING ACCOUNT: ") @
             checking<-printData() @
+            standardOutput<-println() @
         standardOutput<-println("TELLER: ") @
             atm<-printData() @
+            standardOutput<-println() @
         standardOutput<-println("PINGER: ") @
             acct_pinger<-printData() @
-        atm<-transfer(50, savings, checking, acct_pinger) @
+        atm<-transfer(500, savings, checking, acct_pinger) @
         // wait for transactions to complete
         standardOutput<-println("===================================="):delay(new Integer(5000)) @
         standardOutput<-println("SAVINGS ACCOUNT: ") @
@@ -34,6 +37,9 @@ behavior transfer extends Transactor {
             checking<-printData() @
             standardOutput<-println() @
         standardOutput<-println("TELLER: ") @
-            atm<-printData(); 
+            atm<-printData() @
+            standardOutput<-println() @
+        standardOutput<-println("PINGER: ") @
+            acct_pinger<-printData();
     }
 }

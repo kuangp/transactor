@@ -23,7 +23,7 @@ behavior housePurchase extends Transactor {
         HashMap titles = new HashMap();
         titles.put("1234", "title1234");
         titles.put("5678", "title5678");
-        searcher = new searchSrv(titles);
+        searcher = new searchSrv(titles) at (new UAN("uan://localhost/srchSrv"));
 
         HashMap specs = new HashMap();
         specs.put("1234", "spec1234");
@@ -31,14 +31,13 @@ behavior housePurchase extends Transactor {
         HashMap prices = new HashMap();
         prices.put("1234", 100);
         prices.put("5678", 200);
-        seller = new sellSrv(specs, prices);
+        seller = new sellSrv(specs, prices) at (new UAN("uan://localhost/sellSrv"));
 
-        specs.put("1234", "vspec1234");
-        verifier = new verifySrv(specs, prices);
-        appraiser = new apprSrv();
-        creditAgency = new creditDB();
-        lender = new lendSrv();
-        buyer = new buySrv(searcher, appraiser, seller, lender, verifier, creditAgency);
+        verifier = new verifySrv(specs, prices) at (new UAN("uan://localhost/verifySrv"));
+        appraiser = new apprSrv() at (new UAN("uan://localhost/apprSrv"));
+        creditAgency = new creditDB() at (new UAN("uan://localhost/creditDB"));
+        lender = new lendSrv() at (new UAN("uan://localhost/lendSrv"));
+        buyer = new buySrv(searcher, appraiser, seller, lender, verifier, creditAgency) at (new UAN("uan://localhost/buySrv"));
 
             seller<-initialize() @
             appraiser<-initialize() @

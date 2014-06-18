@@ -279,20 +279,19 @@ public class housePurchase extends Transactor {
 			HashMap titles = new HashMap();
 			titles.put("1234", "title1234");
 			titles.put("5678", "title5678");
-			searcher = ((searchSrv)new searchSrv(this).construct(titles));
+			searcher = ((searchSrv)new searchSrv(new UAN("uan://localhost/srchSrv"),this).construct(titles));
 			HashMap specs = new HashMap();
 			specs.put("1234", "spec1234");
 			specs.put("5678", "spec5678");
 			HashMap prices = new HashMap();
 			prices.put("1234", 100);
 			prices.put("5678", 200);
-			seller = ((sellSrv)new sellSrv(this).construct(specs, prices));
-			specs.put("1234", "vspec1234");
-			verifier = ((verifySrv)new verifySrv(this).construct(specs, prices));
-			appraiser = ((apprSrv)new apprSrv(this).construct());
-			creditAgency = ((creditDB)new creditDB(this).construct());
-			lender = ((lendSrv)new lendSrv(this).construct());
-			buyer = ((buySrv)new buySrv(this).construct(searcher, appraiser, seller, lender, verifier, creditAgency));
+			seller = ((sellSrv)new sellSrv(new UAN("uan://localhost/sellSrv"),this).construct(specs, prices));
+			verifier = ((verifySrv)new verifySrv(new UAN("uan://localhost/verifySrv"),this).construct(specs, prices));
+			appraiser = ((apprSrv)new apprSrv(new UAN("uan://localhost/apprSrv"),this).construct());
+			creditAgency = ((creditDB)new creditDB(new UAN("uan://localhost/creditDB"),this).construct());
+			lender = ((lendSrv)new lendSrv(new UAN("uan://localhost/lendSrv"),this).construct());
+			buyer = ((buySrv)new buySrv(new UAN("uan://localhost/buySrv"),this).construct(searcher, appraiser, seller, lender, verifier, creditAgency));
 			{
 				Token token_2_0 = new Token();
 				Token token_2_1 = new Token();
