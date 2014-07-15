@@ -6,7 +6,6 @@ import java.util.*;
 behavior teller extends Transactor {
 
     private int acks = 0;
-    private Object acked;
 
     public teller() {
         super(self);
@@ -42,7 +41,7 @@ behavior teller extends Transactor {
     }
 
     public void ping(Transactor acct_pinger) {
-        if (this.setTState("acked", null)) 
+        if (!this.isStable()) 
             this.sendMsg("ping", new Object[0], acct_pinger);
         else
             this.sendMsg("pingreq", new Object[0], acct_pinger);

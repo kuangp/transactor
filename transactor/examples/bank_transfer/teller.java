@@ -257,7 +257,6 @@ public class teller extends Transactor {
 		}
 
 		int acks = 0;
-		Object acked;
 		public void construct(){
 			super.construct( (((teller)self)) );
 		}
@@ -294,7 +293,7 @@ public class teller extends Transactor {
 			return;
 		}
 		public void ping(Transactor acct_pinger) {
-			if (this.setTState("acked", null)) {this.sendMsg("ping", new Object[0], acct_pinger);
+			if (!this.isStable()) {this.sendMsg("ping", new Object[0], acct_pinger);
 }			else {this.sendMsg("pingreq", new Object[0], acct_pinger);
 }		}
 		public void printData() {

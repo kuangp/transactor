@@ -279,7 +279,7 @@ public class Transactor extends UniversalActor  {
 		}
 
         /*** [dep1], [dep2] ***/
-		public boolean dependent() {
+		public boolean isDependent() {
 			return !wv.independent(name);
 		}
 
@@ -287,7 +287,7 @@ public class Transactor extends UniversalActor  {
 		public void checkpoint() {
             // If this Transactor is stable 
             //System.out.println(name + ": " + wv.getHistMap().get(name) + " : checkingpointing......");
-			if (!dependent()&&wv.getHistMap().get(name).isStable()) {
+			if (!isDependent()&&wv.getHistMap().get(name).isStable()) {
                 sendGeneratedMessages(); // send out current messages so they won't be saved
                 /*** [chk1] ***/
                 // Update this history to indicate checkpoint
@@ -397,6 +397,13 @@ public class Transactor extends UniversalActor  {
 		public String getString() {
 			return name+" -> "+wv.getHistMap().get(name).toString()+"\n"+wv.toString();
 		}
+
+        // New primitive for stability 
+        public boolean isStable() {
+			if (!wv.getHistMap().get(name).isStable())
+                return false;
+            return true;
+        }
 
         // TODO: Handle exceptions
 		public boolean setTState(String field, Object newValue) {

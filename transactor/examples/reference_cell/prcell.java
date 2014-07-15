@@ -276,7 +276,7 @@ public class prcell extends Transactor {
 		}
 		public void set(int val) {
 			this.setTState("contents", val);
-			if (this.dependent()) {{
+			if (this.isDependent()) {{
 				{
 					// standardOutput<-println("client is dependent while issuing set(): rolling back state......")
 					{

@@ -256,7 +256,6 @@ public class PingDirector extends Transactor {
 		}
 
 		Transactor[] participants;
-		boolean ack;
 		public void construct(){
 			super.construct( (((PingDirector)self)) );
 		}
@@ -267,7 +266,7 @@ public class PingDirector extends Transactor {
 			this.sendMsg("ping", new Object[0], this.self());
 		}
 		public void ping() {
-			if (this.setTState("ack", true)==true) {{
+			if (!this.isStable()) {{
 				this.sendMsg("ping", new Object[0], this.self());
 			}
 }			else {{
