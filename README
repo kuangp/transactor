@@ -1,0 +1,16 @@
+To build project:
+
+1) Run build.sh to build SALSA
+2) Preprocess all salsa files in transactor/language directory with the SALSA preprocessor
+3) Compile all java files in transactor/language and transactor/resources with the SALSA jar
+4) Preprocess and compile all examples in the transactor/examples/* directories with the SALSA compiler 
+
+*Look at the example Makefile to inspect how to compile the transactor language and examples
+        -make trans: compiles the transactor language files
+        -make example-all: compiles all examples
+
+*Transactor programs can be written by importing transactor.lanuage.* and compiled with the SALSA compiler until a transactor compiler is developed. A no arg constructor must be provided with a call to super(self) and stabilization, checkpoint, rollbacks, and msg sends are not legal in the constructor. 
+
+**NOTE: The SALSA language source has been modified from the original to accomodate the transactor language.**
+
+Contact the author: Phillip Kuang [phillip.kuang@gmail.com] for any questions 
