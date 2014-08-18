@@ -32,6 +32,8 @@ behavior housePurchase extends Transactor {
         prices.put("1234", 100);
         prices.put("5678", 200);
         seller = new sellSrv(specs, prices) at (new UAN("uan://localhost/sellSrv"));
+        // Force rollback with inconsistent specs
+        //specs.put("1234", "spec0234");
 
         verifier = new verifySrv(specs, prices) at (new UAN("uan://localhost/verifySrv"));
         appraiser = new apprSrv() at (new UAN("uan://localhost/apprSrv"));

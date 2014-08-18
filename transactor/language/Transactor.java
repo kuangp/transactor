@@ -507,8 +507,8 @@ public class Transactor extends UniversalActor  {
          * Mechanism to start consistent transactions by requesting a pinger from the transaction director
          */
         public void startTransaction(Transactor[] participants, Transactor coordinator, String msg, Object[] msg_args){
-            Object[][] transaction = {{participants, coordinator, msg, msg_args}};
-            this.sendMsg("startTransaction", transaction, ServiceFactory.getTransDirector());
+            Object[][] CDSUpdate = {{participants, coordinator, msg, msg_args}};
+            this.sendMsg("startCDSUpdate", CDSUpdate, ServiceFactory.getCDSUpdateDirector());
         }
 	}
 }

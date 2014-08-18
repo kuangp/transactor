@@ -33,7 +33,7 @@ import salsa.resources.ActorService;
 
 import java.util.*;
 
-public class TransDirector extends Transactor {
+public class CDSUpdateDirector extends Transactor {
 	public static void main(String args[]) {
 		UAN uan = null;
 		UAL ual = null;
@@ -68,7 +68,7 @@ public class TransDirector extends Transactor {
 			ual = new UAL( ServiceFactory.getTheater().getLocation() + System.getProperty("identifier"));
 		}
 		RunTime.receivedMessage();
-		TransDirector instance = (TransDirector)new TransDirector(uan, ual,null).construct();
+		CDSUpdateDirector instance = (CDSUpdateDirector)new CDSUpdateDirector(uan, ual,null).construct();
 		gc.WeakReference instanceRef=new gc.WeakReference(uan,ual);
 		{
 			Object[] _arguments = { args };
@@ -81,18 +81,18 @@ public class TransDirector extends Transactor {
 		RunTime.finishedProcessingMessage();
 	}
 
-	public static ActorReference getReferenceByName(UAN uan)	{ return new TransDirector(false, uan); }
-	public static ActorReference getReferenceByName(String uan)	{ return TransDirector.getReferenceByName(new UAN(uan)); }
-	public static ActorReference getReferenceByLocation(UAL ual)	{ return new TransDirector(false, ual); }
+	public static ActorReference getReferenceByName(UAN uan)	{ return new CDSUpdateDirector(false, uan); }
+	public static ActorReference getReferenceByName(String uan)	{ return CDSUpdateDirector.getReferenceByName(new UAN(uan)); }
+	public static ActorReference getReferenceByLocation(UAL ual)	{ return new CDSUpdateDirector(false, ual); }
 
-	public static ActorReference getReferenceByLocation(String ual)	{ return TransDirector.getReferenceByLocation(new UAL(ual)); }
-	public TransDirector(boolean o, UAN __uan)	{ super(false,__uan); }
-	public TransDirector(boolean o, UAL __ual)	{ super(false,__ual); }
-	public TransDirector(UAN __uan,UniversalActor.State sourceActor)	{ this(__uan, null, sourceActor); }
-	public TransDirector(UAL __ual,UniversalActor.State sourceActor)	{ this(null, __ual, sourceActor); }
-	public TransDirector(UniversalActor.State sourceActor)		{ this(null, null, sourceActor);  }
-	public TransDirector()		{  }
-	public TransDirector(UAN __uan, UAL __ual, Object obj) {
+	public static ActorReference getReferenceByLocation(String ual)	{ return CDSUpdateDirector.getReferenceByLocation(new UAL(ual)); }
+	public CDSUpdateDirector(boolean o, UAN __uan)	{ super(false,__uan); }
+	public CDSUpdateDirector(boolean o, UAL __ual)	{ super(false,__ual); }
+	public CDSUpdateDirector(UAN __uan,UniversalActor.State sourceActor)	{ this(__uan, null, sourceActor); }
+	public CDSUpdateDirector(UAL __ual,UniversalActor.State sourceActor)	{ this(null, __ual, sourceActor); }
+	public CDSUpdateDirector(UniversalActor.State sourceActor)		{ this(null, null, sourceActor);  }
+	public CDSUpdateDirector()		{  }
+	public CDSUpdateDirector(UAN __uan, UAL __ual, Object obj) {
 		//decide the type of sourceActor
 		//if obj is null, the actor must be the startup actor.
 		//if obj is an actorReference, this actor is created by a remote actor
@@ -115,7 +115,7 @@ public class TransDirector extends Transactor {
 			      setSource(sourceActor.getUAN(), sourceActor.getUAL());
 			      activateGC();
 			    }
-			    createRemotely(__uan, __ual, "transactor.language.TransDirector", sourceRef);
+			    createRemotely(__uan, __ual, "transactor.language.CDSUpdateDirector", sourceRef);
 			  }
 
 			  // local creation
@@ -180,11 +180,11 @@ public class TransDirector extends Transactor {
 	}
 
 	public class State extends Transactor.State {
-		public TransDirector self;
+		public CDSUpdateDirector self;
 		public void updateSelf(ActorReference actorReference) {
-			((TransDirector)actorReference).setUAL(getUAL());
-			((TransDirector)actorReference).setUAN(getUAN());
-			self = new TransDirector(false,getUAL());
+			((CDSUpdateDirector)actorReference).setUAL(getUAL());
+			((CDSUpdateDirector)actorReference).setUAN(getUAN());
+			self = new CDSUpdateDirector(false,getUAL());
 			self.setUAN(getUAN());
 			self.setUAL(getUAL());
 			self.activateGC();
@@ -196,7 +196,7 @@ public class TransDirector extends Transactor {
 
 		public State(UAN __uan, UAL __ual) {
 			super(__uan, __ual);
-			addClassName( "transactor.language.TransDirector$State" );
+			addClassName( "transactor.language.CDSUpdateDirector$State" );
 			addMethodsForClasses();
 		}
 
@@ -256,12 +256,12 @@ public class TransDirector extends Transactor {
 		}
 
 		public void construct(){
-			super.construct( (((TransDirector)self)) );
+			super.construct( (((CDSUpdateDirector)self)) );
 		}
-		public void startTransaction(Object[] transaction) {
+		public void startCDSUpdate(Object[] CDSUpdate) {
 			this.stabilize();
 			PingDirector director = (PingDirector)this.newTActor(((PingDirector)new PingDirector(this).construct()));
-			this.sendMsg("pingStart", transaction, director);
+			this.sendMsg("pingStart", CDSUpdate, director);
 		}
 	}
 }

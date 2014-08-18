@@ -1,0 +1,19 @@
+module transactor.language;
+
+import java.util.*;
+
+/*
+ * CDS Update Director creates a new Ping Director to use in conjunction with a new CDS update 
+ */
+behavior CDSUpdateDirector extends Transactor {
+
+    public CDSUpdateDirector(){
+        super(self);
+    }
+
+    public void startCDSUpdate(Object[] CDSUpdate){
+        this.stabilize();
+        PingDirector director = (PingDirector)this.newTActor(new PingDirector());
+        this.sendMsg("pingStart", CDSUpdate, director);
+    }
+}

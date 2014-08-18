@@ -16,7 +16,7 @@ import salsa.resources.SystemService;
 import salsa.resources.InputService;
 import salsa.resources.Dummy;
 import transactor.resources.TStorageService;
-import transactor.language.TransDirector;
+import transactor.language.CDSUpdateDirector;
 import gc.LocalCollector;
 import gc.serverGC.GCAgent;
 
@@ -62,7 +62,7 @@ public class ServiceFactory {
         private static GCAgent                  gcAgent         = null;
         private static ActorReference           dummySVC        = null;
         private static TStorageService          Tstorage = null;
-        private static TransDirector Tdirector = null;
+        private static CDSUpdateDirector Tdirector = null;
 
 	//default service classes
 	private static String			theaterClass	= "wwc.messaging.Theater";
@@ -81,7 +81,7 @@ public class ServiceFactory {
         private static String			GCAgentClass	= "gc.serverGC.GCAgent";
         private static String                   DummySVCClass   = "salsa.resources.Dummy";
         private static String                   TstorageClass = "transactor.resources.TestTStorageService";
-        private static String                   TdirectorClass = "transactor.language.TransDirector";
+        private static String                   TdirectorClass = "transactor.language.CDSUpdateDirector";
 
 	//Applets cannot access System, so we have to make sure
 	//this theater is not an AppletTheater before doing so.
@@ -425,10 +425,10 @@ public class ServiceFactory {
 	 * Returns a TransDirector instance.
 	 * @return TransDirector 
 	 */
-	public synchronized static TransDirector getTransDirector() {
+	public synchronized static CDSUpdateDirector getCDSUpdateDirector() {
 
 			try {
-				Tdirector = (TransDirector)createActor(TdirectorClass, "transactor/TransDirector");
+				Tdirector = (CDSUpdateDirector)createActor(TdirectorClass, "transactor/CDSUpdateDirector");
 			} catch (Exception e) {
 				printErrorMessage(TdirectorClass, e);
 			}
