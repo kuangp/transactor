@@ -79,8 +79,8 @@ public class Proxy extends Transactor  {
             super.sendMsg(method, params, recipient);
 		}
 	
-        // Proxies cannot coordinate transactions and do not have an influence on the global state so they do not partake in the transaction protocol
-        public void transactionStart(String msg, Object[] msg_args, PingDirector director){}
+        // Proxies cannot coordinate CDSUpdates and do not have an influence on the global state so they do not partake in the transaction protocol
+        public void CDSUpdateStart(String msg, Object[] msg_args, PingDirector director){}
         public void pingreq(Transactor[] pingreqs) {}
         public void ping() {}
 	}

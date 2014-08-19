@@ -480,11 +480,11 @@ public class Transactor extends UniversalActor  {
 		}
 
         /* 
-         * Coordinator transactor records current transaction director and sends itself the trigger msg
-         * NOTE: Sending the trigger message to self ot start the transaciton places its name in the root set
+         * Coordinator transactor records current CDSUpdate director and sends itself the trigger msg
+         * NOTE: Sending the trigger message to self to start the CDSUpdate places its name in the root set
          * which may be undesirable in certain circumstances...
          */
-        public void transactionStart(String msg, Object[] msg_args, PingDirector director){
+        public void CDSUpdateStart(String msg, Object[] msg_args, PingDirector director){
             this.setTState("pingDirector", director);
             this.sendMsg(msg, msg_args, this.self());
         }
@@ -504,9 +504,9 @@ public class Transactor extends UniversalActor  {
         }
 
         /*
-         * Mechanism to start consistent transactions by requesting a pinger from the transaction director
+         * Mechanism to start CDSUpdate by requesting a pinger from the CDSUpdate director
          */
-        public void startTransaction(Transactor[] participants, Transactor coordinator, String msg, Object[] msg_args){
+        public void startCDSUpdate(Transactor[] participants, Transactor coordinator, String msg, Object[] msg_args){
             Object[][] CDSUpdate = {{participants, coordinator, msg, msg_args}};
             this.sendMsg("startCDSUpdate", CDSUpdate, ServiceFactory.getCDSUpdateDirector());
         }

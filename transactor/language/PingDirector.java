@@ -261,8 +261,8 @@ public class PingDirector extends Transactor {
 		}
 		public void pingStart(Transactor[] participants, Transactor coordinator, String msg, Object[] msg_args) {
 			this.setTState("participants", participants);
-			Object[] transaction = { msg, msg_args, this.self() };
-			this.sendMsg("transactionStart", transaction, coordinator);
+			Object[] CDSUpdate = { msg, msg_args, this.self() };
+			this.sendMsg("CDSUpdateStart", CDSUpdate, coordinator);
 			this.sendMsg("ping", new Object[0], this.self());
 		}
 		public void ping() {
@@ -277,7 +277,7 @@ public class PingDirector extends Transactor {
 				}
 			}
 }		}
-		public void endTransaction() {
+		public void endCDSUpdate() {
 			this.stabilize();
 		}
 	}

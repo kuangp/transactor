@@ -274,7 +274,7 @@ public class transfer extends Transactor {
 			Transactor[] participants = { ((Transactor)this.getTState("save")), ((Transactor)this.getTState("check")), ((Transactor)this.getTState("banker")) };
 			Object[] transferInfo = { 500, ((bankaccount)this.getTState("save")), ((bankaccount)this.getTState("check")) };
 			this.stabilize();
-			this.startTransaction(participants, ((teller)this.getTState("banker")), "transfer", transferInfo);
+			this.startCDSUpdate(participants, ((teller)this.getTState("banker")), "transfer", transferInfo);
 		}
 		public void act(String[] args) {
 			bankaccount savings = ((bankaccount)new bankaccount(this).construct(100));

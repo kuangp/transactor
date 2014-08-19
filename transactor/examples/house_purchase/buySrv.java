@@ -311,19 +311,19 @@ public class buySrv extends Transactor {
 		public void close() {
 			if (((String)this.getTState("title"))!=null&&((String)this.getTState("mortgage"))!=null) {{
 				this.stabilize();
-				this.sendMsg("endTransaction", new Object[0], ((PingDirector)this.getTState("pingDirector")));
+				this.sendMsg("endCDSUpdate", new Object[0], ((PingDirector)this.getTState("pingDirector")));
 			}
 }			else {{
 				this.sendMsg("close", new Object[0], this.self());
 			}
 }		}
 		public void rejectOffer() {
-			this.sendMsg("endTransaction", new Object[0], ((PingDirector)this.getTState("pingDirector")));
+			this.sendMsg("endCDSUpdate", new Object[0], ((PingDirector)this.getTState("pingDirector")));
 			this.rollback(false, null);
 			return;
 		}
 		public void mortgageDeny() {
-			this.sendMsg("endTransaction", new Object[0], ((PingDirector)this.getTState("pingDirector")));
+			this.sendMsg("endCDSUpdate", new Object[0], ((PingDirector)this.getTState("pingDirector")));
 			this.rollback(false, null);
 			return;
 		}

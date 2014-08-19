@@ -33,7 +33,7 @@ behavior housePurchase extends Transactor {
         prices.put("5678", 200);
         seller = new sellSrv(specs, prices) at (new UAN("uan://localhost/sellSrv"));
         // Force rollback with inconsistent specs
-        //specs.put("1234", "spec0234");
+        specs.put("1234", "spec0234");
 
         verifier = new verifySrv(specs, prices) at (new UAN("uan://localhost/verifySrv"));
         appraiser = new apprSrv() at (new UAN("uan://localhost/apprSrv"));
@@ -71,7 +71,7 @@ behavior housePurchase extends Transactor {
         Transactor[] participants = {((Transactor)this.getTState("seller")), ((Transactor)this.getTState("appraiser")), ((Transactor)this.getTState("lender")), ((Transactor)this.getTState("buyer"))};
 
         Object[] purchase = {"1234"};
-        this.startTransaction(participants, ((buySrv)this.getTState("buyer")), "newHousePurchase", purchase);
+        this.startCDSUpdate(participants, ((buySrv)this.getTState("buyer")), "newHousePurchase", purchase);
 
     }
 
