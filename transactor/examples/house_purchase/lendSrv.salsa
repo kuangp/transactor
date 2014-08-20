@@ -41,7 +41,7 @@ behavior lendSrv extends Transactor {
             this.sendMsg("mortgageApproval", approval, ((buySrv)this.getTState("buyer")));
         } else {
             this.sendMsg("mortgageDeny", new Object[0], ((buySrv)this.getTState("buyer")));
-            this.rollback(false, null); return;
+            this.rollback(false); return;
         }
     }
 

@@ -95,6 +95,11 @@ public class Transactor extends UniversalActor  {
 
         // Transaction director aka the pinger used to reconcile dependency information within a set of participants of a transaction
         public PingDirector pingDirector;
+
+        public final String versionAlpha = "ALPHA";
+        public final String versionBeta = "BETA";
+        public String currentVersion = versionAlpha;
+        public String stableVersion = versionBeta;
         
         /* 
          * Super constructor must be called from subclasses of transactors
@@ -112,7 +117,7 @@ public class Transactor extends UniversalActor  {
                 this.name = self.getUAN().toString().substring(self.getUAN().toString().lastIndexOf("/") + 1);
 			else 
                 this.name = self.getUAL().toString().substring(self.getUAL().toString().lastIndexOf("/") + 1);
-            try { this.USL = new URI("file:///Users/carrykuang/Documents/transactor/"+name+".ser"); }
+            try { this.USL = new URI("file:///Users/carrykuang/Documents/transactor/"); }
             // TODO: Handle malformed uri
             catch (Exception e) { e.printStackTrace(); }
 			wv = new Worldview();
@@ -149,10 +154,6 @@ public class Transactor extends UniversalActor  {
 				if (wv.getHistMap().get(name).isPersistent()) {
 					
                     //System.out.println("roll back cause of dep\n\n");
-					Worldview new_wv = new Worldview();
-					HashMap new_histMap = new HashMap();
-					new_histMap.put(name, union.getHistMap().get(name));
-					new_wv.setHistMap(new_histMap);
 
                     // Message remains and resend to recheck dependencies
                     // self<-recvMsg(msg, msg_wv)
@@ -161,7 +162,7 @@ public class Transactor extends UniversalActor  {
                     self.send(pass_msg);
 
                     // rollback should be last call since no calls after should be processed
-					this.rollback(true, new_wv);
+					this.rollback(true);
                     //if (isDestroyed())
                      //   return;
                    
@@ -269,13 +270,29 @@ public class Transactor extends UniversalActor  {
         /*** [sta1], [sta2] ***/
 		public void stabilize() {
 			wv.getHistMap().get(name).stabilize();
-            // TODO: Save stable state
-            // stable and checkpointed saved states would need to be seperate
-            // when reloading we reload last saved state (stable or checkpoint) if suddent failure
-            // we reload last checkpoint only on normal run time rollback
-            // need to determine most recent saved state (stable/checkpoint) to load upon recovery from failure
             // how to recover from failure?
             // on system start, each transactor check for saved state?
+            sendGeneratedMessages(); // send out current messages so they won't be saved
+
+            // Empty mailboxes so we don't stored messages with state
+            // Do we want to keep these to restart the network on node failures? 
+            Vector temp_mailbox = mailbox;
+            Hashtable temp_pendingMessages = pendingMessages;
+            Vector temp_unresolvedTokens = unresolvedTokens;
+            mailbox = new Vector();
+            pendingMessages = new Hashtable();
+            unresolvedTokens = new Vector();
+            
+            try {
+                ServiceFactory.getTStorage().store(this, new URI(USL.toString() + stableVersion + "_" + name + ".ser"));
+            } catch (Exception e) { e.printStackTrace(); }
+
+            // Place messages back in mailboxes
+            // NOTE: We should end processing of the current message after checkpoint completes
+            //       The messages in the mailbox should process as usual 
+            mailbox.addAll(temp_mailbox);
+            pendingMessages.putAll(temp_pendingMessages);
+            unresolvedTokens.addAll(temp_unresolvedTokens);
 		}
 
         /*** [dep1], [dep2] ***/
@@ -288,33 +305,18 @@ public class Transactor extends UniversalActor  {
             // If this Transactor is stable 
             //System.out.println(name + ": " + wv.getHistMap().get(name) + " : checkingpointing......");
 			if (!isDependent()&&wv.getHistMap().get(name).isStable()) {
-                sendGeneratedMessages(); // send out current messages so they won't be saved
                 /*** [chk1] ***/
                 // Update this history to indicate checkpoint
-				wv.getHistMap().get(name).checkpoint();
-				HashMap new_histMap = new HashMap();
-				new_histMap.put(name, wv.getHistMap().get(name));
-				wv = new Worldview();
+                wv.getHistMap().get(name).checkpoint();
+                HashMap new_histMap = new HashMap();
+                new_histMap.put(name, wv.getHistMap().get(name));
+                wv = new Worldview();
                 // Reset Dep Graph and Root Set 
-				wv.setHistMap(new_histMap);
-
-                // Empty mailboxes so we don't stored messages with state
-                // Do we want to keep these to restart the network on node failures? 
-                Vector temp_mailbox = mailbox;
-                Hashtable temp_pendingMessages = pendingMessages;
-                Vector temp_unresolvedTokens = unresolvedTokens;
-                mailbox = new Vector();
-                pendingMessages = new Hashtable();
-                unresolvedTokens = new Vector();
-                
-                ServiceFactory.getTStorage().store(this, USL);
-
-                // Place messages back in mailboxes
-                // NOTE: We should end processing of the current message after checkpoint completes
-                //       The messages in the mailbox should process as usual 
-                mailbox.addAll(temp_mailbox);
-                pendingMessages.putAll(temp_pendingMessages);
-                unresolvedTokens.addAll(temp_unresolvedTokens);
+                wv.setHistMap(new_histMap);
+                // Update current checkpointed version name
+                currentVersion = (currentVersion == versionAlpha) ? versionBeta : versionAlpha;
+                // Update stable storage prefix
+                stableVersion = (stableVersion == versionAlpha) ? versionBeta : versionAlpha;
                 
 			}
 			else {
@@ -337,7 +339,7 @@ public class Transactor extends UniversalActor  {
          *         True: Dependency rollback
          * TODO: extend with USL and filename scheme
          */
-		public void rollback(boolean force, Worldview updatedWV) {
+		public void rollback(boolean force) {
 			if (!wv.getHistMap().get(name).isStable()||force) {
                 /*** [rol2] ***/
 				if (wv.getHistMap().get(name).isPersistent()) {
@@ -360,11 +362,11 @@ public class Transactor extends UniversalActor  {
 					Worldview new_wv = new Worldview();
 					new_wv.setHistMap(new_histMap);
 
-                    // For updating WV from dependency invalidation of received message
-                    if (updatedWV != null)
-                        new_wv = updatedWV;
+                    Transactor.State savedState = null;
 
-                    Transactor.State savedState = (Transactor.State) ServiceFactory.getTStorage().get(USL);
+                    try {
+                        savedState = (Transactor.State) ServiceFactory.getTStorage().get(new URI(USL.toString() + currentVersion + "_" + name + ".ser"));
+                    } catch (Exception e) { e.printStackTrace(); }
 
                     ActorMemory mem = getActorMemory();
                     Object[] reloadArgs = { savedState, new_wv, mailbox, pendingMessages, unresolvedTokens, mem };

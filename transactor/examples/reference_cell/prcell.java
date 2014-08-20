@@ -285,7 +285,7 @@ public class prcell extends Transactor {
 						__messages.add( message );
 					}
 				}
-				this.rollback(false, null);
+				this.rollback(false);
 				return;
 			}
 }			else {{

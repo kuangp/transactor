@@ -289,7 +289,7 @@ public class lendSrv extends Transactor {
 			}
 }			else {{
 				this.sendMsg("mortgageDeny", new Object[0], ((buySrv)this.getTState("buyer")));
-				this.rollback(false, null);
+				this.rollback(false);
 				return;
 			}
 }		}

@@ -21,7 +21,7 @@ behavior prcell extends Transactor {
         this.setTState("contents", val);
         if (this.isDependent()) {
             standardOutput<-println("client is dependent while issuing set(): rolling back state......");
-            this.rollback(false, null); return;
+            this.rollback(false); return;
         }
         else {
             this.stabilize();

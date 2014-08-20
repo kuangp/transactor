@@ -280,7 +280,7 @@ public class bankaccount extends Transactor {
 			if (((int)this.getTState("bal"))<0) {{
 				response[0] = "Not enough funds!";
 				this.sendMsg("done", response, atm);
-				this.rollback(false, null);
+				this.rollback(false);
 				return;
 			}
 }			else {{

@@ -289,7 +289,7 @@ public class sellSrv extends Transactor {
 			}
 }			else {{
 				this.sendMsg("rejectOffer", new Object[0], buyer);
-				this.rollback(false, null);
+				this.rollback(false);
 				return;
 			}
 }		}

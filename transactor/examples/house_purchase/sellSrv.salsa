@@ -33,7 +33,7 @@ behavior sellSrv extends Transactor {
         }
         else {
             this.sendMsg("rejectOffer", new Object[0], buyer);
-            this.rollback(false, null); return;
+            this.rollback(false); return;
         }
     }
 

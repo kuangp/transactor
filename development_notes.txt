@@ -1,8 +1,14 @@
-⇒[[[At (UAN,UAL,USL) required, but for source start up actor, will search for syst  em property and if none found then default to file:// and cannot migrate even if UAN is in system prop
+⇒[[[At (UAN,UAL,USL) required, but for source start up actor, will search for system property and if none found then default to file:// and cannot migrate even if UAN is in system prop
 ⇒Complier needs to be extended to parse (at USL) and put set US L in actor level construct() (not the state construct method) -> the super() constructor calls transactor constructor and USL will be set there => we can but probably not put the USL logic in UniversalActor but leave in Transactor.java instead ]]]
 ⇒^^^ look at notes
 Currently inheritance and sub-classing not supported****
 -> need to implement complier to pass up information (self, uan, etc) in the State() constructor to separate it from class constructor so we don’t have to worry about inserting super(self)array size
 
 ⇒move Transactor construct code into State() 
+
+-For implementing node failure-
+Use naming service to track USL, UAL, UAN, Worldview, currentVersion
+We need to track worldview to track cascading rollback histories and checkpoint history updates (storage states do not reflect checkpointed history) 
+Update NS for WV on each rollback and checkpoint
+Update currentVersion on stabilize and rollback
     

@@ -296,7 +296,7 @@ public class apprSrv extends Transactor {
 			}
 }			else {{
 				this.sendMsg("appraisal", housePrice, ((Transactor)this.getTState("requester")));
-				this.rollback(false, null);
+				this.rollback(false);
 				return;
 			}
 }		}

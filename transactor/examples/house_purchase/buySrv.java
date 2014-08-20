@@ -319,12 +319,12 @@ public class buySrv extends Transactor {
 }		}
 		public void rejectOffer() {
 			this.sendMsg("endCDSUpdate", new Object[0], ((PingDirector)this.getTState("pingDirector")));
-			this.rollback(false, null);
+			this.rollback(false);
 			return;
 		}
 		public void mortgageDeny() {
 			this.sendMsg("endCDSUpdate", new Object[0], ((PingDirector)this.getTState("pingDirector")));
-			this.rollback(false, null);
+			this.rollback(false);
 			return;
 		}
 		public void printString() {

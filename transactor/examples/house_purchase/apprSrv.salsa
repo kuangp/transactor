@@ -49,7 +49,7 @@ behavior apprSrv extends Transactor {
             this.sendMsg("appraisal", housePrice, ((Transactor)this.getTState("requester")));
         } else {
             this.sendMsg("appraisal", housePrice, ((Transactor)this.getTState("requester")));
-            this.rollback(false, null); return;
+            this.rollback(false); return;
         }
     }
 
